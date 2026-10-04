@@ -43,34 +43,6 @@ body{
 .wrap{max-width:1360px;margin:0 auto;padding:20px 20px 40px;}
 
 /* header */
-.lock-screen{
-  position:fixed; inset:0; z-index:9999;
-  background:rgba(10,14,20,0.92); backdrop-filter:blur(14px);
-  display:flex; align-items:center; justify-content:center;
-}
-.lock-screen.hidden{display:none;}
-.lock-box{
-  background:var(--panel, #141b24); border:1px solid var(--line, #263140);
-  border-radius:14px; padding:36px 34px; width:340px; max-width:90vw;
-  text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.5);
-}
-.lock-icon{font-size:34px; margin-bottom:10px;}
-.lock-box h2{font-family:'Space Grotesk',sans-serif; font-size:20px; margin:0 0 4px; color:var(--text,#e6edf3);}
-.lock-sub{color:var(--muted,#8b98a8); font-size:13px; margin:0 0 18px;}
-.lock-box input{
-  width:100%; box-sizing:border-box; background:#0d1218; border:1px solid var(--line,#263140);
-  border-radius:8px; color:var(--text,#e6edf3); font-size:15px; padding:11px 12px; margin-bottom:12px;
-  font-family:'Inter',sans-serif;
-}
-.lock-box input:focus{outline:2px solid var(--accent,#4fa3e0); outline-offset:1px;}
-.lock-box button{
-  width:100%; background:var(--accent,#4fa3e0); color:#0d1218; border:none;
-  font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px;
-  padding:11px; border-radius:8px; cursor:pointer;
-}
-.lock-box button:hover{background:#69b4e6;}
-.lock-error{color:var(--crit,#e2635a); font-size:13px; min-height:18px; margin:10px 0 0;}
-.lock-note{color:var(--muted,#8b98a8); font-size:11px; margin:14px 0 0; line-height:1.5;}
 .logout-btn{
   background:transparent; border:1px solid var(--line,#263140); color:var(--muted,#8b98a8);
   font-family:'Inter',sans-serif; font-size:12px; padding:6px 12px; border-radius:7px; cursor:pointer;
@@ -114,6 +86,44 @@ body{
 .ruler{display:flex;gap:2px;align-items:flex-end;height:20px;}
 .ruler span{width:1px;background:var(--line);}
 .ruler span:nth-child(5n){background:var(--accent2);}
+
+/* Patient identity bar — a wrong-patient safety check, always visible above the
+   modality tabs. Amber border when Name or ID is missing (nothing typed yet, or
+   cleared by "New patient"); reverts to the normal panel border once both are filled. */
+.patient-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  gap:14px;
+  background:var(--panel,#141b24);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:12px 14px;
+  margin-bottom:16px;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+.patient-bar.needs-id{
+  border-color:var(--warn);
+  box-shadow:0 0 0 1px rgba(242,173,74,0.25);
+}
+.patient-field{display:flex;flex-direction:column;gap:3px;}
+.patient-field label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.patient-field input{
+  background:#0d1218;
+  border:1px solid var(--line);
+  border-radius:5px;
+  color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+  padding:7px 9px;
+}
+.patient-field input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+.patient-field input::placeholder{color:#455063;}
+.patient-field.pf-name{flex:1 1 220px;}
+.patient-field.pf-id{flex:1 1 140px;}
+.patient-field.pf-age{width:70px;}
+.patient-field.pf-date{width:150px;}
+.patient-warn-note{font-size:10.5px;color:var(--warn);align-self:center;}
 
 /* tabs */
 .tabbar{display:flex;gap:4px;margin-bottom:20px;}
@@ -348,7 +358,7 @@ mark.miss{border-color:#7a8bd0;background:rgba(122,139,208,.15);}
 .checklist .grp:first-child{margin-top:4px;}
 
 /* report builder — grid fills left-to-right across a row, then wraps down */
-#neckCards, #fastCards, #breastCards, #fetalCards, #xrayCards, #scoliosisCards, #duplexCards, #sonomammoCards, #scrotalCards{
+#neckCards, #fastCards, #breastCards, #fetalCards, #xrayCards, #scoliosisCards, #duplexCards, #sonomammoCards, #scrotalCards, #softTissueCards{
   display:grid;
   grid-template-columns:1fr;
   gap:12px;
@@ -502,7 +512,9 @@ mark.miss{border-color:#7a8bd0;background:rgba(122,139,208,.15);}
 .copy-full-btn:focus-visible{outline:2px solid var(--text);outline-offset:2px;}
 
 /* modality bar */
-.modality-bar{display:flex;gap:7px;margin-bottom:18px;flex-wrap:wrap;}
+.modality-bar{display:flex;flex-direction:column;gap:12px;margin-bottom:18px;}
+.modality-group-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:7px;}
+.modality-group-row{display:flex;gap:7px;flex-wrap:wrap;}
 .modality-bar button{
   font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;
   padding:10px 18px;border-radius:9px;border:1px solid var(--line);
@@ -714,19 +726,6 @@ body{padding-bottom:56px;}
 </head>
 <body>
 
-<!-- Lock screen overlay -->
-<div id="lockScreen" class="lock-screen">
-  <div class="lock-box">
-    <div class="lock-icon">&#128274;</div>
-    <h2>Reading Room QA</h2>
-    <p class="lock-sub">Enter password to unlock</p>
-    <input type="password" id="lockInput" placeholder="Password" autocomplete="off" autofocus>
-    <button id="lockBtn">Unlock</button>
-    <p class="lock-error" id="lockError"></p>
-    <p class="lock-note">This is a casual privacy lock, not encryption. Keep the file itself private.</p>
-  </div>
-</div>
-
 <div class="wrap" id="appWrap">
 
   <div class="masthead">
@@ -737,8 +736,31 @@ body{padding-bottom:56px;}
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="ruler" id="ruler"></div>
       <button id="newPatientBtn" class="logout-btn" title="Clear the builder for a new patient">&#128260; New patient</button>
-      <button id="logoutBtn" class="logout-btn" title="Lock the app">&#128274; Lock</button>
     </div>
+  </div>
+
+  <div class="patient-bar" id="patientBar">
+    <div class="patient-field pf-name">
+      <label for="patientNameInput">Patient</label>
+      <input type="text" id="patientNameInput" placeholder="Full name" autocomplete="off">
+    </div>
+    <div class="patient-field pf-id">
+      <label for="patientIdInput">Patient ID / MRN (optional)</label>
+      <input type="text" id="patientIdInput" placeholder="ID / MRN" autocomplete="off">
+    </div>
+    <div class="patient-field pf-age">
+      <label for="patientAgeInput">Age</label>
+      <input type="text" id="patientAgeInput" placeholder="Age" inputmode="numeric" autocomplete="off">
+    </div>
+    <div class="patient-field">
+      <label>Sex</label>
+      <div id="patientSexPills"></div>
+    </div>
+    <div class="patient-field pf-date">
+      <label for="patientDateInput">Exam date</label>
+      <input type="date" id="patientDateInput">
+    </div>
+    <span class="patient-warn-note" id="patientWarnNote"></span>
   </div>
 
   <div class="modality-bar" id="modalityBar"></div>
@@ -747,7 +769,7 @@ body{padding-bottom:56px;}
     <div class="col-builder">
       <div class="panel">
         <h2>Build findings</h2>
-        <p class="hint">Tap a status for each organ — the report updates live below. Open the report panel anytime to review or copy. Hover any option group and press <strong style="color:var(--text);">1–9</strong> to pick it instantly. Green edge = normal, amber = a finding is documented.</p>
+        <p class="hint">Tap a status for each organ — the report updates live below. Open the report panel anytime to review or copy. Hover any option group and press <strong style="color:var(--text);">1–9</strong> to pick it instantly. Green edge = normal, amber = a finding is documented. Jump straight to an organ's measurement box with <strong style="color:var(--text);">F1</strong> Pancreas, <strong style="color:var(--text);">F2</strong> Aorta, <strong style="color:var(--text);">F3</strong> Liver, <strong style="color:var(--text);">F4</strong> Gallbladder, <strong style="color:var(--text);">F5</strong>/<strong style="color:var(--text);">F6</strong> R/L kidney, <strong style="color:var(--text);">F7</strong> Spleen, <strong style="color:var(--text);">F8</strong> Bladder, <strong style="color:var(--text);">F9</strong> Prostate/Pelvis, <strong style="color:var(--text);">F10</strong> Appendix — and <strong style="color:var(--text);">Esc</strong> to start a new patient.</p>
         <div id="organCards"></div>
         <div id="neckCards" style="display:none;"></div>
         <div id="fastCards" style="display:none;"></div>
@@ -758,6 +780,7 @@ body{padding-bottom:56px;}
         <div id="duplexCards" style="display:none;"></div>
         <div id="sonomammoCards" style="display:none;"></div>
         <div id="scrotalCards" style="display:none;"></div>
+        <div id="softTissueCards" style="display:none;"></div>
         <div class="row" style="margin-top:14px;">
           <button class="ghost" id="resetBuilder">Reset all to normal</button>
         </div>
@@ -933,14 +956,13 @@ const MISSPELLINGS = {
   "adnexial":"adnexal","myometrum":"myometrium","liomyoma":"leiomyoma",
   "microcalcifcations":"microcalcifications","tendonopathy":"tendinopathy (or tendonopathy — pick one convention)",
   "sacroilitis":"sacroiliitis","diverticulits":"diverticulitis","nephrolithaisis":"nephrolithiasis",
-  "cholelithaisis":"cholelithiasis","spondylolisthesis":"spondylolisthesis",
-  "hemmorhage":"hemorrhage","hemorrage":"hemorrhage","asymmetric":"asymmetric",
+  "cholelithaisis":"cholelithiasis",
+  "hemmorhage":"hemorrhage","hemorrage":"hemorrhage",
   "irregual":"irregular","suspicous":"suspicious","malignanct":"malignant",
-  "benign":"benign","echogenecity":"echogenicity","echogenecitiy":"echogenicity",
-  "vasculature":"vasculature","calcifed":"calcified","calcifcation":"calcification",
-  "thyroid":"thyroid","nodularity":"nodularity","hypoattenuating":"hypoattenuating",
-  "hyperattenuating":"hyperattenuating","enchancement":"enhancement","enhacement":"enhancement",
-  "artifiical":"artificial","costophrenic":"costophrenic"
+  "echogenecity":"echogenicity","echogenecitiy":"echogenicity",
+  "calcifed":"calcified","calcifcation":"calcification",
+  "enchancement":"enhancement","enhacement":"enhancement",
+  "artifiical":"artificial"
 };
 
 const PAIRED_ANATOMY = ["knee","shoulder","hip","wrist","ankle","elbow","kidney","lung",
@@ -1509,7 +1531,10 @@ function gbPolypClause(count, mode){
     ? `Multiple non-shadowing echogenic foci, adherent to the gallbladder wall, are noted<< (individual sizes: {polypSizesAll})>>.`
     : `Multiple non-shadowing echogenic foci, adherent to the gallbladder wall, are noted<<, the largest measuring {polypSizeLargest} cm>>.`;
 }
-function gbSludgeClause(){
+function gbSludgeClause(type){
+  if(type==='tumefactive'){
+    return `A mobile, non-shadowing, avascular echogenic intraluminal collection<< measuring {sludgeSize} cm>> is noted within the gallbladder lumen, in keeping with tumefactive sludge (sludge ball).`;
+  }
   return `Low-level echoes are seen layering the dependent region of the gallbladder lumen.`;
 }
 function gbAdenomyomatosisClause(){
@@ -1520,6 +1545,7 @@ const GB_IMPRESSIONS = {
   stones:'Cholecystolithiasis.',
   polyp:'Gallbladder polyp(s).',
   sludge:'Gallbladder sludge.',
+  sludgeTumefactive:'Tumefactive gallbladder sludge (sludge ball) — no internal vascularity; recommend follow-up ultrasound or change-of-position scanning to confirm mobility and exclude a true intraluminal lesion.',
   adenomyomatosis:'Gallbladder adenomyomatosis.',
   nonspecific:'Non-specific gallbladder wall thickening.',
   reactive:'Reactive gallbladder wall thickening.',
@@ -1553,6 +1579,9 @@ function gallbladderFields(st){
     } else {
       fields.push({id:'polypSizeLargest',label:'Largest polyp',unit:'cm'});
     }
+  }
+  if(st.findings.sludge && st.sludgeType==='tumefactive'){
+    fields.push({id:'sludgeSize',label:'Sludge ball size',unit:'cm'});
   }
   return fields;
 }
@@ -1626,6 +1655,10 @@ const KIDNEY_HYDRO_LABELS = {none:'None', 'hydro-mild':'Mild', 'hydro-mod':'Mode
 const KIDNEY_ADDITIONAL_LABELS = {cyst:'Renal cyst(s)', stone:'Nephrolithiasis', aml:'Angiomyolipoma', corticalcalc:'Renal cortical calcification', hydroureter:'Hydroureter'};
 const KIDNEY_CYST_LOCATIONS = {superior:'superior pole', interpolar:'interpolar region', inferior:'inferior pole'};
 const KIDNEY_STONE_LOCATIONS = {superior:'superior calyx', middle:'middle calyx', inferior:'inferior calyx'};
+// Complex renal cyst features (Bosniak-type red flags) — documentable only when
+// a cyst's type is set to "Complex" rather than the default "Simple (anechoic)".
+const KIDNEY_CYST_FEATURE_LABELS = {calcification:'Wall/septal calcification', muralNodule:'Mural nodule'};
+const KIDNEY_CYST_FEATURE_PHRASES = {calcification:'wall/septal calcification', muralNodule:'a mural nodule'};
 
 // Abnormality descriptor for one side (used when the side is NOT normal).
 // Measurements are handled separately and lead the paragraph now.
@@ -1647,17 +1680,39 @@ function joinLocations(ids, map){
 }
 function kidneyAdditionalTemplate(id, s, sideState){
   if(id==='cyst'){
-    const mode = sideState.cystMode || 'single';
-    const locNames = joinLocations(sideState.cystLoc, KIDNEY_CYST_LOCATIONS);
-    const loc = locNames ? ` at the ${locNames}` : '';
-    if(mode==='all'){
-      return `Multiple well-defined anechoic, thin-walled cortical cysts<< (individual sizes: {${s}CystSizesAll})>> are noted in the ${s} kidney${loc}.`;
+    // A kidney can carry simple and complex cysts at the same time now, each
+    // with its own location + count/measurement mode — build one sentence per
+    // type present and join them, rather than treating type as a single
+    // either/or choice.
+    const types = (sideState.cystTypes && sideState.cystTypes.length) ? sideState.cystTypes : ['simple'];
+    const sentences = [];
+    if(types.includes('simple')){
+      const mode = sideState.cystMode || 'single';
+      const locNames = joinLocations(sideState.cystLoc, KIDNEY_CYST_LOCATIONS);
+      const loc = locNames ? ` at the ${locNames}` : '';
+      if(mode==='all'){
+        sentences.push(`Multiple well-defined anechoic, thin-walled cortical cysts<< (individual sizes: {${s}CystSizesAll})>> are noted in the ${s} kidney${loc}.`);
+      } else if(mode==='largest'){
+        sentences.push(`Multiple well-defined anechoic, thin-walled cortical cysts<< measuring up to {${s}CystSize} cm>> are noted in the ${s} kidney${loc}.`);
+      } else {
+        sentences.push(`A well-defined anechoic, thin-walled cortical cyst<< measuring {${s}CystSize} cm>> is noted in the ${s} kidney${loc}.`);
+      }
     }
-    if(mode==='largest'){
-      return `Multiple well-defined anechoic, thin-walled cortical cysts<< measuring up to {${s}CystSize} cm>> are noted in the ${s} kidney${loc}.`;
+    if(types.includes('complex')){
+      const mode = sideState.complexCystMode || 'single';
+      const locNames = joinLocations(sideState.complexCystLoc, KIDNEY_CYST_LOCATIONS);
+      const loc = locNames ? ` at the ${locNames}` : '';
+      const featPhrases = (sideState.cystFeatures||[]).map(f=>KIDNEY_CYST_FEATURE_PHRASES[f]).filter(Boolean);
+      const featClause = featPhrases.length ? `, with ${featPhrases.length===1 ? featPhrases[0] : featPhrases.slice(0,-1).join(', ')+' and '+featPhrases[featPhrases.length-1]}` : '';
+      if(mode==='all'){
+        sentences.push(`Multiple complex cystic lesions<< (individual sizes: {${s}ComplexCystSizesAll})>> are noted in the ${s} kidney${loc}${featClause}.`);
+      } else if(mode==='largest'){
+        sentences.push(`Multiple complex cystic lesions<< measuring up to {${s}ComplexCystSize} cm>> are noted in the ${s} kidney${loc}${featClause}.`);
+      } else {
+        sentences.push(`A complex cystic lesion<< measuring {${s}ComplexCystSize} cm>> is noted in the ${s} kidney${loc}${featClause}.`);
+      }
     }
-    // single
-    return `A well-defined anechoic, thin-walled cortical cyst<< measuring {${s}CystSize} cm>> is noted in the ${s} kidney${loc}.`;
+    return sentences.join(' ');
   }
   if(id==='stone'){
     const mode = sideState.stoneMode || 'single';
@@ -1720,6 +1775,28 @@ function combineOrSplit(id, paraParts, st, augM){
   const rHas = st.right.additional[id];
   const lHas = st.left.additional[id];
   if(rHas && lHas){
+    // The terse combined ("...on the right the largest measuring X and on the
+    // left up to Y...") phrasing only works when both sides are reporting a
+    // single number. If either side is set to "Multiple — all" or "Aggregate",
+    // collapsing to "the largest"/"up to" silently drops the detail the user
+    // entered (e.g. all individual stone sizes) — describe each side with its
+    // own full sentence instead so that mode is respected.
+    const modeKey = id==='cyst' ? 'cystMode' : 'stoneMode';
+    const rMode = st.right[modeKey] || 'single';
+    const lMode = st.left[modeKey] || 'single';
+    const simpleModes = ['single','largest'];
+    // A cyst side carrying a complex cyst — alone or alongside a simple one —
+    // can never use the terse "well-defined anechoic...both kidneys" combined
+    // lead sentence below (that wording is specifically for simple-only
+    // cysts) — force the full per-side sentences instead, same as the
+    // "all"/"aggregate" mode carve-out above.
+    const cystTypesOf = (sd)=> (sd.cystTypes && sd.cystTypes.length) ? sd.cystTypes : ['simple'];
+    const eitherNotSimpleOnly = id==='cyst' && (cystTypesOf(st.right).join(',')!=='simple' || cystTypesOf(st.left).join(',')!=='simple');
+    if(!simpleModes.includes(rMode) || !simpleModes.includes(lMode) || eitherNotSimpleOnly){
+      paraParts.push(fillTemplate(kidneyAdditionalTemplate(id, 'right', st.right), augM));
+      paraParts.push(fillTemplate(kidneyAdditionalTemplate(id, 'left', st.left), augM));
+      return;
+    }
     const locMap = id==='cyst' ? KIDNEY_CYST_LOCATIONS : KIDNEY_STONE_LOCATIONS;
     const rLoc = joinLocations(id==='cyst'?st.right.cystLoc:st.right.stoneLoc, locMap);
     const lLoc = joinLocations(id==='cyst'?st.left.cystLoc:st.left.stoneLoc, locMap);
@@ -1785,10 +1862,24 @@ function kidneyBaseFields(s){
 }
 function kidneyAdditionalFields(id, s, sideState){
   if(id==='cyst'){
-    const mode = (sideState && sideState.cystMode) || 'single';
-    return mode==='all'
-      ? [{id:`${s}CystSizesAll`,label:`${cap(s)} cyst sizes`,unit:'',text:true,placeholder:'e.g. 1.2 x 1.3 cm, 1.4 x 1.0 cm'}]
-      : [{id:`${s}CystSize`,label:`${cap(s)} ${mode==='largest'?'largest cyst':'cyst'} size`,unit:'cm'}];
+    const types = (sideState && sideState.cystTypes && sideState.cystTypes.length) ? sideState.cystTypes : ['simple'];
+    const both = types.includes('simple') && types.includes('complex');
+    let out = [];
+    if(types.includes('simple')){
+      const mode = (sideState && sideState.cystMode) || 'single';
+      const tag = both ? 'simple ' : '';
+      out = out.concat(mode==='all'
+        ? [{id:`${s}CystSizesAll`,label:`${cap(s)} ${tag}cyst sizes`,unit:'',text:true,placeholder:'e.g. 1.2 x 1.3 cm, 1.4 x 1.0 cm'}]
+        : [{id:`${s}CystSize`,label:`${cap(s)} ${mode==='largest'?`largest ${tag}cyst`:`${tag}cyst`} size`,unit:'cm'}]);
+    }
+    if(types.includes('complex')){
+      const mode = (sideState && sideState.complexCystMode) || 'single';
+      const tag = both ? 'complex ' : '';
+      out = out.concat(mode==='all'
+        ? [{id:`${s}ComplexCystSizesAll`,label:`${cap(s)} ${tag}cyst sizes`,unit:'',text:true,placeholder:'e.g. 1.2 x 1.3 cm, 1.4 x 1.0 cm'}]
+        : [{id:`${s}ComplexCystSize`,label:`${cap(s)} ${mode==='largest'?`largest ${tag}cyst`:`${tag}cyst`} size`,unit:'cm'}]);
+    }
+    return out;
   }
   if(id==='stone'){
     const mode = (sideState && sideState.stoneMode) || 'single';
@@ -2124,6 +2215,9 @@ function techniqueText(){
   }
   if(builderState.modality==='xray'){
     const X = builderState.Xray;
+    if(X.subtype==='chest'){
+      return `Chest radiograph (${X.chest.views||'PA'} view) was obtained.`;
+    }
     const parsed = parseAoCode(X.aoCodeInput);
     const useCode = X.aoCodeInput && X.aoCodeInput.trim()!=='' && parsed.valid;
     const bone = useCode ? parsed.boneLabel : boneName(X);
@@ -2157,13 +2251,18 @@ function studyIncludes(organKey){
 const builderState = {
   modality: 'abdomen',
   studyType: 'whole_abdomen',
+  // Patient identity header — independent of modality/findings, carried across
+  // modality switches, cleared only on an explicit "New patient" action (button
+  // or Esc), never by "Reset all to normal". Exists purely as a wrong-patient
+  // safety check: shown in a sticky bar and prepended to every copied/sent report.
+  patient: {name:'', id:'', age:'', sex:'', examDate: todayISO()},
   expandedOrgans: {}, // organ keys the user manually expanded this session
   Liver:{steatosis:'none', parenchymal:false, hepatomegaly:false, cirrhotic:false, additional:{}, measurements:{}},
-  Gallbladder:{wall:'none', findings:{stones:false, polyp:false, sludge:false, adenomyomatosis:false}, measurements:{}, stoneMode:'largest', stoneShadowing:'shadowing', polypCount:'single', polypMode:'largest'},
+  Gallbladder:{wall:'none', findings:{stones:false, polyp:false, sludge:false, adenomyomatosis:false}, measurements:{}, stoneMode:'largest', stoneShadowing:'shadowing', polypCount:'single', polypMode:'largest', sludgeType:'layering'},
   Pancreas:{primary:'normal', additional:{}, measurements:{}},
   Aorta:{status:'none', findings:{dilatation:false, calcification:false, paraAortic:false}, measurements:{}},
   Spleen:{primary:'normal', measurements:{}, overrideSize:false},
-  Kidneys:{right:{primary:'normal', hydro:'none', additional:{}, cystLoc:[], stoneLoc:[], cmd:'good', cystMode:'single', stoneMode:'single', stoneShadowing:'shadowing'}, left:{primary:'normal', hydro:'none', additional:{}, cystLoc:[], stoneLoc:[], cmd:'good', cystMode:'single', stoneMode:'single', stoneShadowing:'shadowing'}, measurements:{}},
+  Kidneys:{right:{primary:'normal', hydro:'none', additional:{}, cystLoc:[], cystTypes:['simple'], cystFeatures:[], complexCystLoc:[], complexCystMode:'single', stoneLoc:[], cmd:'good', cystMode:'single', stoneMode:'single', stoneShadowing:'shadowing'}, left:{primary:'normal', hydro:'none', additional:{}, cystLoc:[], cystTypes:['simple'], cystFeatures:[], complexCystLoc:[], complexCystMode:'single', stoneLoc:[], cmd:'good', cystMode:'single', stoneMode:'single', stoneShadowing:'shadowing'}, measurements:{}},
   Bladder:{primary:'normal', additional:{}, measurements:{}, includeVolumes:false, foley:false},
   Prostate:{primary:'normal', calcification:false, ipp:false, ippMm:'', measurements:{}},
   Pelvis:{
@@ -2180,6 +2279,7 @@ const builderState = {
   FreeFluid:{rightThorax:false, leftThorax:false, hrs:false, srs:false, paracolic:false, pelvic:false, ascitesQty:'minimal', ascitesIndex:'', maxCollection:''},
   Ducts:{cbdStatus:'normal', cbd:'', pdStatus:'normal', pd:'', postChole:false}, // status: normal | dilated
   Xray:{
+    subtype:'fracture', // fracture | chest — which X-ray builder is active
     clinicalInfo:'',
     aoCodeInput:'',   // typed 2018 AO/OTA code to decode
     qualMeaning:'',   // user-supplied meaning for the qualification letter (fracture-specific)
@@ -2195,7 +2295,15 @@ const builderState = {
     openFracture:false,
     intraarticular:false,
     softTissue:'',     // free text
-    views:'AP and lateral'
+    views:'AP and lateral',
+    chest:{             // fields used only when subtype==='chest'
+      clinicalInfo:'',
+      views:'PA',        // PA | AP | PA and lateral
+      lungPattern:'normal', // normal | interstitial | pneumonia — mutually exclusive lung-line pattern
+      atherosclerosis:false,
+      spondylosis:false,
+      cardiomegaly:false
+    }
   },
   Scoliosis:{
     levelTop:'T5', levelBottom:'T10',
@@ -2242,6 +2350,27 @@ const builderState = {
            hernia:'none', herniaDefect:'', herniaContent:'bowel' },
     scrotalWall:'normal',   // normal | thickened
     inguinalNodes:'normal'  // normal | right | left | bilateral
+  },
+  SoftTissue:{
+    locationBody:'nonspecific',      // nonspecific | bursa | ganglion | lymphnode | other
+    locationBodyOther:'',
+    locationTissue:'subcutaneous',   // subcutaneous | intramuscular | both
+    composition:'entirelySolid',     // entirelySolid | predominantlySolid | predominantlyCystic | entirelyCystic
+    sizeCC:'', sizeTR:'', sizeAP:'', // cm — cranio-caudal / transverse / anterior-posterior
+    involved:['none'],               // none | dermis | nerve | tendon | bone | joint | vessels ("none" = no adjacent structures, mutually exclusive with the rest)
+    attenuation:'none',              // none | increased | shadowing
+    echogenicity:'isoechoic',        // anechoic | hypoechoic | isoechoic | hyperechoic | heterogeneous
+    margins:'smooth',                // smooth | illdefined | lobulated | irregular | infiltrative
+    vascularity:'none',              // none | barely | readily | abundant | peripheral
+    dopplerMode:'color',             // color | power | colorpower
+    otherFeatures:[],                // multilocularity | compressibility | mobileEchoes | calcifications | other
+    otherFeaturesText:'',
+    impressionType:'benign',         // benign | neoplasm | notmass | lymphadenopathy
+    benignType:'',
+    notMassType:'',
+    lymphNodeType:'nonspecific',     // reactive | metastatic | lymphoma | nonspecific
+    recommend:[],                    // nofurther | followup | mri | biopsy | aspiration | surgical
+    followUpWeeks:''
   },
   Sonomammo:{
     clinicalData:'',
@@ -2300,7 +2429,7 @@ const builderState = {
     nuchalCord:false, // true = nuchal cord coil present
     crl:'',           // crown-rump length (cm) — early dating
     bpd:'', hc:'', ac:'', fl:'', // cm — Fetus A
-    fetusB:{bpd:'', hc:'', ac:'', fl:'', crl:'', presentation:'Cephalic', gender:''}, // Fetus B (twin)
+    fetusB:{bpd:'', hc:'', ac:'', fl:'', crl:'', presentation:'Cephalic', gender:'', fht:'', afi:''}, // Fetus B (twin)
     efwOverride:'',   // manual EFW override (g)
     gaOverride:'',    // manual average GA override (free text)
     eddOverride:''    // manual EDD override
@@ -2321,7 +2450,8 @@ const builderState = {
 // ===== ACR TI-RADS scoring data =====
 const TIRADS_CATEGORIES = {
   composition: {label:'Composition', options:[
-    {id:'cystic', label:'Cystic / almost completely cystic', pts:0},
+    {id:'cystic', label:'Cystic', pts:0},
+    {id:'almostcystic', label:'Almost completely cystic', pts:0},
     {id:'spongiform', label:'Spongiform', pts:0},
     {id:'mixed', label:'Mixed cystic and solid', pts:1},
     {id:'solid', label:'Solid / almost completely solid', pts:2},
@@ -2330,7 +2460,8 @@ const TIRADS_CATEGORIES = {
   ]},
   echogenicity: {label:'Echogenicity', options:[
     {id:'anechoic', label:'Anechoic', pts:0},
-    {id:'hyper_iso', label:'Hyperechoic / isoechoic', pts:1},
+    {id:'hyper', label:'Hyperechoic', pts:1},
+    {id:'iso', label:'Isoechoic', pts:1},
     {id:'hypo', label:'Hypoechoic', pts:2},
     {id:'veryhypo', label:'Very hypoechoic', pts:3},
     // ACR: assign 1 point if echogenicity cannot be determined
@@ -2348,8 +2479,14 @@ const TIRADS_CATEGORIES = {
     // ACR: assign 0 points if margin cannot be determined
     {id:'undet', label:'Cannot be determined', pts:0}
   ]},
+  // Echogenic foci is the one ACR TI-RADS category scored as select-all-that-apply —
+  // points for every foci type present are summed (e.g. macrocalcifications + punctate
+  // foci in the same nodule = 1 + 3 = 4 pts). See renderNodules()/click handler below,
+  // which treats this category as a multi-select instead of the single-select pills
+  // used for the other four categories.
   foci: {label:'Echogenic foci', options:[
-    {id:'none', label:'None / large comet-tail', pts:0},
+    {id:'none', label:'None', pts:0},
+    {id:'cometTail', label:'Large comet-tail artifact', pts:0},
     {id:'macro', label:'Macrocalcifications', pts:1},
     {id:'rim', label:'Peripheral (rim) calcifications', pts:2},
     {id:'punctate', label:'Punctate echogenic foci', pts:3}
@@ -2357,12 +2494,30 @@ const TIRADS_CATEGORIES = {
 };
 // Text used in the findings paragraph for each option
 const TIRADS_FINDING_TEXT = {
-  composition:{cystic:'cystic', spongiform:'spongiform', mixed:'mixed cystic and solid', solid:'solid', undet:'indeterminate internal composition'},
-  echogenicity:{anechoic:'anechoic', hyper_iso:'iso- to hyperechoic', hypo:'hypoechoic', veryhypo:'very hypoechoic', undet:'indeterminate echogenicity'},
+  composition:{cystic:'cystic', almostcystic:'almost completely cystic', spongiform:'spongiform', mixed:'mixed cystic and solid', solid:'solid', undet:'indeterminate internal composition'},
+  echogenicity:{anechoic:'anechoic', hyper:'hyperechoic', iso:'isoechoic', hypo:'hypoechoic', veryhypo:'very hypoechoic', undet:'indeterminate echogenicity'},
   shape:{wider:'wider-than-tall', taller:'taller-than-wide'},
   margin:{smooth:'smooth margins', illdefined:'ill-defined margins', lobulated:'lobulated/irregular margins', extrathyroidal:'extrathyroidal extension', undet:'margins that cannot be assessed'},
-  foci:{none:'no echogenic foci', macro:'macrocalcifications', rim:'peripheral (rim) calcifications', punctate:'punctate echogenic foci'}
+  foci:{none:'no echogenic foci', cometTail:'large comet-tail artifacts', macro:'macrocalcifications', rim:'peripheral (rim) calcifications', punctate:'punctate echogenic foci'}
 };
+// Echogenic foci points/label are summed across a nodule's selected foci array
+// (see TIRADS_CATEGORIES.foci comment above).
+function tiradsFociArray(foci){
+  return Array.isArray(foci) ? foci : (foci ? [foci] : []);
+}
+function tiradsFociPts(foci){
+  return tiradsFociArray(foci).reduce((sum,id)=>{
+    const o = TIRADS_CATEGORIES.foci.options.find(x=>x.id===id);
+    return sum + (o ? o.pts : 0);
+  }, 0);
+}
+function tiradsFociLineText(foci){
+  const arr = tiradsFociArray(foci);
+  if(!arr.length) return 'none';
+  const labels = arr.map(id=>TIRADS_FINDING_TEXT.foci[id] || id);
+  if(labels.length===1) return labels[0];
+  return labels.slice(0,-1).join(', ') + ' and ' + labels[labels.length-1];
+}
 function tiradsCategory(pts){
   if(pts<=1) return {tr:1, desc:'Benign'};
   if(pts===2) return {tr:2, desc:'Not suspicious'};
@@ -2389,17 +2544,18 @@ function tiradsRecommendation(tr, maxDimCm){
   return 'FNAB if \u22651 cm; follow-up if \u22650.5 cm.';
 }
 function newNodule(){
-  return {location:'', size1:'', size2:'', size3:'', composition:'solid', echogenicity:'hyper_iso', shape:'wider', margin:'smooth', foci:'none'};
+  return {location:'', size1:'', size2:'', size3:'', composition:'solid', echogenicity:'iso', shape:'wider', margin:'smooth', foci:['none']};
 }
 function noduleScore(n){
   // ACR TI-RADS: spongiform composition is automatically TR1 (0 points),
   // and the other feature categories are not scored.
   if(n.composition==='spongiform') return 0;
   let pts = 0;
-  ['composition','echogenicity','shape','margin','foci'].forEach(cat=>{
+  ['composition','echogenicity','shape','margin'].forEach(cat=>{
     const opt = TIRADS_CATEGORIES[cat].options.find(o=>o.id===n[cat]);
     if(opt) pts += opt.pts;
   });
+  pts += tiradsFociPts(n.foci);
   return pts;
 }
 function noduleMaxDim(n){
@@ -2461,26 +2617,165 @@ function pillGroupMultiHtml(attrs, options, activeArr){
   ).join('') + `</div>`;
 }
 
+// ---------- Patient identity bar ----------
+// A wrong-patient safety check: name/ID/age/sex/exam date, independent of any
+// modality's findings. Carried across modality switches; cleared only by an
+// explicit "New patient" action (button or Esc) — never by "Reset all to normal".
+function todayISO(){
+  const d = new Date();
+  const pad = n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+// Every patient-bar field is left out of the printed report header entirely
+// when blank, rather than shown as a "___" placeholder (see patientHeaderText()) —
+// each field is independent, so e.g. Age alone with Sex still blank just omits
+// Sex rather than printing "Age / Sex: 45Y / ___". Name is the one field the
+// identity-bar warning insists on (see updatePatientWarning() below) — that's a
+// UI-only nudge during entry, separate from what ends up in the report text.
+function updatePatientWarning(){
+  const missingName = !builderState.patient.name.trim();
+  document.getElementById('patientBar').classList.toggle('needs-id', missingName);
+  document.getElementById('patientWarnNote').textContent = missingName ? 'Enter patient name before signing' : '';
+}
+function renderPatientBar(){
+  const p = builderState.patient;
+  document.getElementById('patientNameInput').value = p.name || '';
+  document.getElementById('patientIdInput').value = p.id || '';
+  document.getElementById('patientAgeInput').value = p.age || '';
+  document.getElementById('patientDateInput').value = p.examDate || '';
+  document.getElementById('patientSexPills').innerHTML =
+    pillGroupHtml('data-patient-sex="1"', [{id:'M',label:'M'},{id:'F',label:'F'}], p.sex);
+  document.querySelectorAll('[data-patient-sex]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const val = e.currentTarget.dataset.pillValue;
+      // Tap the already-selected sex again to clear it, same as leaving it unset.
+      p.sex = (p.sex===val) ? '' : val;
+      renderPatientBar();
+    });
+  });
+  updatePatientWarning();
+}
+document.getElementById('patientNameInput').addEventListener('input', e=>{
+  builderState.patient.name = e.target.value;
+  updatePatientWarning();
+});
+document.getElementById('patientIdInput').addEventListener('input', e=>{
+  builderState.patient.id = e.target.value;
+});
+document.getElementById('patientAgeInput').addEventListener('input', e=>{ builderState.patient.age = e.target.value; });
+document.getElementById('patientDateInput').addEventListener('input', e=>{ builderState.patient.examDate = e.target.value; });
+function clearPatientInfo(){
+  builderState.patient = {name:'', id:'', age:'', sex:'', examDate: todayISO()};
+  renderPatientBar();
+}
+// Text prepended to every copied/sent report (Copy full report, Load current
+// report text, Gmail compose) — so the patient identity always travels with it.
+function patientHeaderText(){
+  const p = builderState.patient;
+  const lines = [];
+  const name = (p.name||'').trim();
+  if(name){
+    lines.push(`Patient: ${name}`);
+  }
+  // Patient ID/MRN — most studies won't have an MRN on hand, so it's left off
+  // entirely when blank rather than shown as a "___" placeholder to chase down.
+  const id = (p.id||'').trim();
+  if(id){
+    lines.push(`Patient ID / MRN: ${id}`);
+  }
+  // Age and Sex share one line when both are present (compact, the common
+  // case), but each is independently omitted when blank rather than printing
+  // a "___" placeholder for the missing half — e.g. Age alone prints "Age:
+  // 45Y" rather than "Age / Sex: 45Y / ___".
+  const age = (p.age||'').trim();
+  const ageTxt = age ? (/^\d+$/.test(age) ? age+'Y' : age) : '';
+  const sexTxt = (p.sex||'').trim();
+  if(ageTxt && sexTxt){
+    lines.push(`Age / Sex: ${ageTxt} / ${sexTxt}`);
+  } else if(ageTxt){
+    lines.push(`Age: ${ageTxt}`);
+  } else if(sexTxt){
+    lines.push(`Sex: ${sexTxt}`);
+  }
+  const examDate = (p.examDate||'').trim();
+  if(examDate){
+    lines.push(`Exam date: ${examDate}`);
+  }
+  if(!lines.length) return '';
+  return lines.join('\n') + '\n\n';
+}
+
+// group: 'radiograph' (plain-film studies) vs 'ultrasound' (everything sonographic,
+// including the mammography-plus-ultrasound Sonomammography study) — split into two
+// labeled rows in the modality bar so radiograph reading and ultrasound reading are
+// visually separated, per user request.
 const MODALITIES = [
-  {id:'abdomen', label:'Abdomen / KUB'},
-  {id:'neck', label:'Neck / Thyroid'},
-  {id:'fast', label:'E-FAST (Trauma)'},
-  {id:'breast', label:'Breast'},
-  {id:'fetal', label:'Fetal Biometry'},
-  {id:'xray', label:'X-ray (Fracture)'},
-  {id:'scoliosis', label:'Scoliosis Series'},
-  {id:'duplex', label:'Arterial Duplex (LE)'},
-  {id:'sonomammo', label:'Sonomammography'},
-  {id:'scrotal', label:'Inguino-scrotal'}
+  {id:'abdomen', label:'Abdomen / KUB', group:'ultrasound'},
+  {id:'neck', label:'Neck / Thyroid', group:'ultrasound'},
+  {id:'fast', label:'E-FAST (Trauma)', group:'ultrasound'},
+  {id:'breast', label:'Breast', group:'ultrasound'},
+  {id:'fetal', label:'Fetal Biometry', group:'ultrasound'},
+  {id:'xray', label:'X-ray', group:'radiograph'},
+  {id:'scoliosis', label:'Scoliosis Series', group:'radiograph'},
+  {id:'duplex', label:'Arterial Duplex (LE)', group:'ultrasound'},
+  {id:'sonomammo', label:'Sonomammography', group:'ultrasound'},
+  {id:'scrotal', label:'Inguino-scrotal', group:'ultrasound'},
+  {id:'softtissue', label:'Soft Tissue', group:'ultrasound'}
 ];
+const MODALITY_GROUPS = [
+  {id:'radiograph', label:'Radiographs'},
+  {id:'ultrasound', label:'Ultrasound'}
+];
+
+// ===== Remember the last builder used, across patients AND across page reloads =====
+// Purely a "which builder was open" convenience — never persists clinical findings,
+// which still reset per-patient via resetBuilderForNewPatient() as before. Covers the
+// modality tab itself (so "X-ray" stays selected through a whole batch of X-rays, or
+// "Neck / Thyroid" through a run of ultrasounds) plus the two sub-choices that are
+// also "which builder," not patient data: X-ray's Fracture/Chest sub-type and
+// Abdomen/KUB's study type (Whole abdomen / KUB / etc.).
+const LAST_BUILDER_KEY = 'rrqa_lastBuilder_v1';
+function saveLastBuilderChoice(){
+  try{
+    localStorage.setItem(LAST_BUILDER_KEY, JSON.stringify({
+      modality: builderState.modality,
+      xraySubtype: builderState.Xray.subtype,
+      studyType: builderState.studyType
+    }));
+  }catch(e){ /* localStorage unavailable (private browsing, storage full, etc.) — skip silently */ }
+}
+function restoreLastBuilderChoice(){
+  try{
+    const raw = localStorage.getItem(LAST_BUILDER_KEY);
+    if(!raw) return;
+    const saved = JSON.parse(raw);
+    if(saved && saved.modality && MODALITIES.some(m=>m.id===saved.modality)){
+      builderState.modality = saved.modality;
+    }
+    if(saved && (saved.xraySubtype==='fracture' || saved.xraySubtype==='chest')){
+      builderState.Xray.subtype = saved.xraySubtype;
+    }
+    if(saved && saved.studyType && STUDY_TYPES.some(s=>s.id===saved.studyType)){
+      builderState.studyType = saved.studyType;
+    }
+  }catch(e){ /* corrupt or blocked storage — fall back to the built-in defaults */ }
+}
+
 function buildModalityBar(){
   const bar = document.getElementById('modalityBar');
-  bar.innerHTML = MODALITIES.map(m=>
-    `<button type="button" data-modality="${m.id}" class="${builderState.modality===m.id?'active':''}">${m.label}</button>`
-  ).join('');
+  bar.innerHTML = MODALITY_GROUPS.map(g=>{
+    const items = MODALITIES.filter(m=>m.group===g.id);
+    return `<div class="modality-group">
+      <div class="modality-group-label">${g.label}</div>
+      <div class="modality-group-row">
+        ${items.map(m=>`<button type="button" data-modality="${m.id}" class="${builderState.modality===m.id?'active':''}">${m.label}</button>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
   bar.querySelectorAll('button').forEach(btn=>{
     btn.addEventListener('click', e=>{
       builderState.modality = e.currentTarget.dataset.modality;
+      saveLastBuilderChoice();
       syncModalityView();
       generateReport();
     });
@@ -2499,6 +2794,7 @@ function syncModalityView(){
   document.getElementById('duplexCards').style.display = mod==='duplex' ? '' : 'none';
   document.getElementById('sonomammoCards').style.display = mod==='sonomammo' ? '' : 'none';
   document.getElementById('scrotalCards').style.display = mod==='scrotal' ? '' : 'none';
+  document.getElementById('softTissueCards').style.display = mod==='softtissue' ? '' : 'none';
   buildModalityBar();
   if(mod==='neck') buildNeckCards();
   else if(mod==='fast'){ buildFastCards(); if(fastFused) buildOrganCards(); }
@@ -2509,6 +2805,7 @@ function syncModalityView(){
   else if(mod==='duplex') buildDuplexCards();
   else if(mod==='sonomammo') buildSonomammoCards();
   else if(mod==='scrotal') buildScrotalCards();
+  else if(mod==='softtissue') buildSoftTissueCards();
   else buildOrganCards();
 }
 
@@ -2665,6 +2962,15 @@ function renderNodules(){
     const dimField = (k,label)=>`<div class="mfield"><label>${label} (cm)</label><input type="text" inputmode="decimal" data-nod-idx="${i}" data-nod-dim="${k}" value="${n[k]||''}" placeholder="cm"></div>`;
     const catRow = (cat)=>{
       const c = TIRADS_CATEGORIES[cat];
+      if(cat==='foci'){
+        // Multi-select: ACR TI-RADS sums points across every foci type present.
+        const selected = tiradsFociArray(n.foci);
+        const catPts = tiradsFociPts(n.foci);
+        return `<div class="tirads-row">
+          <div class="tlabel"><span>${c.label} (select all that apply)</span><span class="pts">+${catPts}</span></div>
+          <div class="tirads-pills">${c.options.map(o=>`<button type="button" class="tirads-pill ${selected.includes(o.id)?'active':''}" data-nod-idx="${i}" data-nod-cat="${cat}" data-nod-val="${o.id}" data-nod-multi="1">${o.label} <span class="p">${o.pts}</span></button>`).join('')}</div>
+        </div>`;
+      }
       const catPts = (()=>{ const o=c.options.find(x=>x.id===n[cat]); return o?o.pts:0; })();
       return `<div class="tirads-row">
         <div class="tlabel"><span>${c.label}</span><span class="pts">+${catPts}</span></div>
@@ -2701,7 +3007,31 @@ function renderNodules(){
   }));
   list.querySelectorAll('[data-nod-cat]').forEach(b=>b.addEventListener('click', e=>{
     const idx=parseInt(e.currentTarget.dataset.nodIdx);
-    N.nodules[idx][e.currentTarget.dataset.nodCat]=e.currentTarget.dataset.nodVal;
+    const cat = e.currentTarget.dataset.nodCat;
+    const val = e.currentTarget.dataset.nodVal;
+    if(e.currentTarget.dataset.nodMulti){
+      // Echogenic foci: toggle membership instead of replacing a single value —
+      // multiple foci types can be present at once and their points are summed.
+      // "None" is mutually exclusive with every real foci type — selecting one
+      // clears "None" (and vice versa) so the findings text never reads
+      // "no echogenic foci, macrocalcifications and ..." at the same time.
+      const n = N.nodules[idx];
+      const arr = tiradsFociArray(n.foci).slice();
+      const pos = arr.indexOf(val);
+      if(val==='none'){
+        n.foci = pos>=0 ? [] : ['none'];
+      } else if(pos>=0){
+        arr.splice(pos,1);
+        n.foci = arr;
+      } else {
+        const noneIdx = arr.indexOf('none');
+        if(noneIdx>=0) arr.splice(noneIdx,1);
+        arr.push(val);
+        n.foci = arr;
+      }
+    } else {
+      N.nodules[idx][cat]=val;
+    }
     renderNodules(); generateReport();
   }));
   list.querySelectorAll('[data-nod-dim]').forEach(inp=>inp.addEventListener('input', e=>{
@@ -3278,6 +3608,7 @@ function fetalEDD(avgWeeks){
 function buildFetalCards(){
   const c = document.getElementById('fetalCards');
   const F = builderState.Fetal;
+  const isTwin = F.fetusCount==='Twin' || F.fetusCount==='Triplet';
 
   const txtInput = (key, ph, val)=>`<input type="text" data-fetal="${key}" value="${(val!=null?val:F[key])||''}" placeholder="${ph}" style="width:100%;background:#0d1218;border:1px solid var(--line);border-radius:5px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12.5px;padding:6px 8px;">`;
   const numField = (key,label)=>`<div class="mfield"><label>${label} (cm)</label><input type="text" inputmode="decimal" data-fetal="${key}" value="${F[key]||''}" placeholder="cm"></div>`;
@@ -3286,18 +3617,12 @@ function buildFetalCards(){
     <div class="organ-card span-all">
       <h3><span class="dot"></span>General survey</h3>
       <div class="field-row"><span class="field-label">Number of fetus</span>${pillGroupHtml('data-fetal-pill="fetusCount"', [{id:'Singleton',label:'Singleton'},{id:'Twin',label:'Twin'},{id:'Triplet',label:'Triplet'}], F.fetusCount)}</div>
-      <div class="field-row" style="margin-top:8px;"><span class="field-label">Presentation</span>${pillGroupHtml('data-fetal-pill="presentation"', [{id:'Cephalic',label:'Cephalic'},{id:'Breech',label:'Breech'},{id:'Transverse',label:'Transverse'}], F.presentation)}</div>
-      <div class="measure-grid" style="margin-top:10px;">
-        <div class="mfield"><label>Fetal heart tone (bpm)</label>${txtInput('fht','e.g. 148')}</div>
-        <div class="mfield"><label>Amniotic fluid index (cm)</label>${txtInput('afi','e.g. 16')}</div>
-      </div>
       <div class="field-row" style="margin-top:10px;"><span class="field-label">Placenta location</span>${pillGroupHtml('data-fetal-pill="placentaLocation"', [{id:'Anterior',label:'Anterior'},{id:'Posterior',label:'Posterior'},{id:'Fundal',label:'Fundal'},{id:'Previa',label:'Previa'}], F.placentaLocation)}</div>
       <div class="field-row" style="margin-top:8px;">
         <span class="field-label">Placental grade ${F.placentaGradeAuto ? '<span style="color:var(--accent);">(auto from GA)</span>' : '<span style="color:var(--muted);">(manual)</span>'}</span>
         ${pillGroupHtml('data-fetal-grade="1"', [{id:'0',label:'Grade 0'},{id:'1',label:'Grade 1'},{id:'2',label:'Grade 2'},{id:'3',label:'Grade 3'}], effectivePlacentaGrade(F))}
         ${!F.placentaGradeAuto ? '<button type="button" id="placentaAutoBtn" class="mini-toggle" style="margin-top:6px;">↻ Back to auto</button>' : ''}
       </div>
-      <div class="field-row" style="margin-top:8px;"><span class="field-label">Gender</span>${pillGroupHtml('data-fetal-pill="gender"', [{id:'Female',label:'Female'},{id:'Male',label:'Male'},{id:'Not determined',label:'Not determined'}], F.gender)}</div>
       <div class="field-row" style="margin-top:10px;">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
           <input type="checkbox" data-fetal-check="nuchalCord" ${F.nuchalCord?'checked':''}> Nuchal cord coil present
@@ -3306,13 +3631,18 @@ function buildFetalCards(){
     </div>`;
 
   // Biometry with live GA readouts
-  const isTwin = F.fetusCount==='Twin' || F.fetusCount==='Triplet';
   const gaLine = (p)=>{ const g=gaWeeksFrom(p, F[p]); return g!=null ? `<span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:11px;">${weeksToWD(g)}</span>` : '<span style="color:var(--muted);font-size:11px;">—</span>'; };
   const crlGaA = gaWeeksFromCRL(F.crl);
   html += `
     <div class="organ-card span-all">
       <h3><span class="dot"></span>Biometry${isTwin?' — Fetus A':''}</h3>
-      <div class="measure-grid" style="margin-bottom:8px;">
+      <div class="field-row"><span class="field-label">Presentation</span>${pillGroupHtml('data-fetal-pill="presentation"', [{id:'Cephalic',label:'Cephalic'},{id:'Breech',label:'Breech'},{id:'Transverse',label:'Transverse'}], F.presentation)}</div>
+      <div class="field-row" style="margin-top:8px;"><span class="field-label">Gender</span>${pillGroupHtml('data-fetal-pill="gender"', [{id:'Female',label:'Female'},{id:'Male',label:'Male'},{id:'Not determined',label:'Not determined'}], F.gender)}</div>
+      <div class="measure-grid" style="margin-top:10px;">
+        <div class="mfield"><label>Fetal heart tone (bpm)</label>${txtInput('fht','e.g. 148')}</div>
+        <div class="mfield"><label>Amniotic fluid index (cm)</label>${txtInput('afi','e.g. 16')}</div>
+      </div>
+      <div class="measure-grid" style="margin-top:10px;margin-bottom:8px;">
         <div class="mfield"><label>CRL (cm) &nbsp; ${crlGaA!=null?`<span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:11px;">${weeksToWD(crlGaA)}</span>`:'<span style="color:var(--muted);font-size:11px;">early dating</span>'}</label><input type="text" inputmode="decimal" data-fetal="crl" value="${F.crl||''}" placeholder="cm"></div>
       </div>
       <div class="measure-grid">
@@ -3353,7 +3683,12 @@ function buildFetalCards(){
     <div class="organ-card span-all">
       <h3><span class="dot"></span>Biometry — Fetus B</h3>
       <div class="field-row"><span class="field-label">Presentation</span>${pillGroupHtml('data-fetalb-pill="presentation"', [{id:'Cephalic',label:'Cephalic'},{id:'Breech',label:'Breech'},{id:'Transverse',label:'Transverse'}], B.presentation)}</div>
-      <div class="measure-grid" style="margin:8px 0;">
+      <div class="field-row" style="margin-top:8px;"><span class="field-label">Gender</span>${pillGroupHtml('data-fetalb-pill="gender"', [{id:'Female',label:'Female'},{id:'Male',label:'Male'},{id:'Not determined',label:'Not determined'}], B.gender)}</div>
+      <div class="measure-grid" style="margin-top:10px;">
+        <div class="mfield"><label>Fetal heart tone (bpm)</label><input type="text" data-fetalb="fht" value="${B.fht||''}" placeholder="e.g. 148" style="width:100%;background:#0d1218;border:1px solid var(--line);border-radius:5px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12.5px;padding:6px 8px;"></div>
+        <div class="mfield"><label>Amniotic fluid index (cm)</label><input type="text" data-fetalb="afi" value="${B.afi||''}" placeholder="e.g. 16" style="width:100%;background:#0d1218;border:1px solid var(--line);border-radius:5px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12.5px;padding:6px 8px;"></div>
+      </div>
+      <div class="measure-grid" style="margin-top:10px;margin-bottom:8px;">
         <div class="mfield"><label>CRL (cm) &nbsp; ${crlGaB!=null?`<span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:11px;">${weeksToWD(crlGaB)}</span>`:'<span style="color:var(--muted);font-size:11px;">early dating</span>'}</label><input type="text" inputmode="decimal" data-fetalb="crl" value="${B.crl||''}" placeholder="cm"></div>
       </div>
       <div class="measure-grid">
@@ -3362,7 +3697,6 @@ function buildFetalCards(){
         <div class="mfield"><label>AC (cm) &nbsp; ${bGaLine('ac')}</label><input type="text" inputmode="decimal" data-fetalb="ac" value="${B.ac||''}" placeholder="cm"></div>
         <div class="mfield"><label>FL (cm) &nbsp; ${bGaLine('fl')}</label><input type="text" inputmode="decimal" data-fetalb="fl" value="${B.fl||''}" placeholder="cm"></div>
       </div>
-      <div class="field-row" style="margin-top:8px;"><span class="field-label">Gender</span>${pillGroupHtml('data-fetalb-pill="gender"', [{id:'Female',label:'Female'},{id:'Male',label:'Male'},{id:'Not determined',label:'Not determined'}], B.gender)}</div>
       <div class="computed-readout" style="margin-top:10px;">
         Fetus B GA: ${bGA!=null?weeksToWD(bGA):'—'} &nbsp;•&nbsp; EFW: ${bEFW!=null?bEFW+' g':'—'}${bBadge}
       </div>
@@ -3639,7 +3973,18 @@ function buildXrayCards(){
   const X = builderState.Xray;
   const txt = (key,ph)=>`<input type="text" data-xray="${key}" value="${X[key]||''}" placeholder="${ph||''}" style="width:100%;box-sizing:border-box;background:#0d1218;border:1px solid var(--line);border-radius:5px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12.5px;padding:6px 8px;">`;
 
-  let html = `
+  const subtypeBar = `
+    <div class="organ-card span-all">
+      <h3><span class="dot"></span>X-ray type</h3>
+      ${pillGroupHtml('data-xray-subtype="1"', [{id:'fracture',label:'Fracture'},{id:'chest',label:'Chest X-ray'}], X.subtype)}
+    </div>`;
+
+  if(X.subtype==='chest'){
+    buildChestXrayCards(c, subtypeBar);
+    return;
+  }
+
+  let html = subtypeBar + `
     <div class="organ-card span-all">
       <h3><span class="dot"></span>Quick decode — paste AO/OTA code</h3>
       <p class="hint" style="margin:-4px 0 8px;">Type a 2018 code (e.g. <b>2U1C3</b>) to auto-write the report. Leave blank to use the manual builder below.</p>
@@ -3705,6 +4050,14 @@ function buildXrayCards(){
 
   c.innerHTML = html;
 
+  c.querySelectorAll('[data-xray-subtype]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      X.subtype = e.currentTarget.dataset.pillValue;
+      saveLastBuilderChoice();
+      buildXrayCards();
+      generateReport();
+    });
+  });
   c.querySelectorAll('[data-xray-pill]').forEach(btn=>{
     btn.addEventListener('click', e=>{
       const key = e.currentTarget.dataset.xrayPill;
@@ -3743,6 +4096,59 @@ function buildXrayCards(){
   });
   c.querySelectorAll('[data-xray-check]').forEach(cb=>{
     cb.addEventListener('change', e=>{ X[e.target.dataset.xrayCheck]=e.target.checked; generateReport(); });
+  });
+}
+
+function buildChestXrayCards(c, subtypeBar){
+  const X = builderState.Xray;
+  const CX = X.chest;
+  const txt = (key,ph)=>`<input type="text" data-chest="${key}" value="${CX[key]||''}" placeholder="${ph||''}" style="width:100%;box-sizing:border-box;background:#0d1218;border:1px solid var(--line);border-radius:5px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12.5px;padding:6px 8px;">`;
+
+  const html = subtypeBar + `
+    <div class="organ-card span-all">
+      <h3><span class="dot"></span>Clinical information & view</h3>
+      <div class="field-row"><span class="field-label">Clinical information</span>${txt('clinicalInfo','e.g. Cough, chest pain, pre-employment')}</div>
+      <div class="field-row" style="margin-top:8px;"><span class="field-label">View</span>${pillGroupHtml('data-chest-pill="views"', [{id:'PA',label:'PA'},{id:'AP',label:'AP'},{id:'PA and lateral',label:'PA and lateral'}], CX.views)}</div>
+    </div>
+
+    <div class="organ-card span-all">
+      <h3><span class="dot"></span>Lung pattern</h3>
+      <p class="hint" style="margin:-4px 0 8px;">Mutually exclusive — describes the primary lung line.</p>
+      ${pillGroupHtml('data-chest-pill="lungPattern"', [{id:'normal',label:'Normal'},{id:'interstitial',label:'Interstitial pneumonia'},{id:'pneumonia',label:'Pneumonia'}], CX.lungPattern)}
+    </div>
+
+    <div class="organ-card span-all">
+      <h3><span class="dot"></span>Other findings</h3>
+      <p class="hint" style="margin:-4px 0 8px;">Leave all unchecked for a normal chest X-ray.</p>
+      <div class="addl-list">
+        <label><input type="checkbox" data-chest-check="atherosclerosis" ${CX.atherosclerosis?'checked':''}> Atherosclerosis of the aorta</label>
+        <label><input type="checkbox" data-chest-check="spondylosis" ${CX.spondylosis?'checked':''}> Thoracic spondylosis</label>
+        <label><input type="checkbox" data-chest-check="cardiomegaly" ${CX.cardiomegaly?'checked':''}> Cardiomegaly</label>
+      </div>
+    </div>`;
+
+  c.innerHTML = html;
+
+  c.querySelectorAll('[data-xray-subtype]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      X.subtype = e.currentTarget.dataset.pillValue;
+      saveLastBuilderChoice();
+      buildXrayCards();
+      generateReport();
+    });
+  });
+  c.querySelectorAll('[data-chest-pill]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      CX[e.currentTarget.dataset.chestPill] = e.currentTarget.dataset.pillValue;
+      buildXrayCards();
+      generateReport();
+    });
+  });
+  c.querySelectorAll('[data-chest]').forEach(inp=>{
+    inp.addEventListener('input', e=>{ CX[e.target.dataset.chest]=e.target.value; generateReport(); });
+  });
+  c.querySelectorAll('[data-chest-check]').forEach(cb=>{
+    cb.addEventListener('change', e=>{ CX[e.target.dataset.chestCheck]=e.target.checked; generateReport(); });
   });
 }
 
@@ -3869,6 +4275,7 @@ function buildOrganCardsInner(){
     studyToggle.querySelectorAll('[data-study-pill]').forEach(btn=>{
       btn.addEventListener('click', e=>{
         builderState.studyType = e.target.dataset.pillValue;
+        saveLastBuilderChoice();
         buildOrganCards();
         generateReport();
       });
@@ -3997,6 +4404,11 @@ function buildOrganCardsInner(){
           </div>`;
         }
       }
+      if(st.findings.sludge){
+        modeHtml += `<div class="field-row" style="margin-top:8px;"><span class="field-label">Sludge — type</span>
+          ${pillGroupHtml('data-organ="Gallbladder" data-mode-key="sludgeType"', [{id:'layering',label:'Layering (dependent)'},{id:'tumefactive',label:'Tumefactive (sludge ball)'}], st.sludgeType||'layering')}
+        </div>`;
+      }
       const fields = gallbladderFields(st);
       const gbNoContents = st.wall==='postchole' || st.wall==='contracted';
       card.innerHTML = `
@@ -4108,9 +4520,22 @@ function buildOrganCardsInner(){
         let locHtml = '';
         const countOpts = [{id:'single',label:'Single lesion'},{id:'largest',label:'Multiple — largest'},{id:'all',label:'Multiple — all'}];
         if(sideState.additional.cyst){
+          // Simple and complex cysts can both be present on the same kidney at
+          // once, each with its own location + count/measurement mode — the
+          // type picker below is a multi-select, not an either/or choice.
+          const cystTypesSel = (sideState.cystTypes && sideState.cystTypes.length) ? sideState.cystTypes : ['simple'];
           const cystOpts = Object.keys(KIDNEY_CYST_LOCATIONS).map(id=>({id, label:KIDNEY_CYST_LOCATIONS[id]}));
-          locHtml += `<div class="field-row" style="margin-top:8px;"><span class="field-label">Cyst location (select all that apply)</span>${pillGroupMultiHtml(`data-korgan="Kidneys" data-kside="${side}" data-kloc="cystLoc"`, cystOpts, sideState.cystLoc)}</div>`;
-          locHtml += `<div class="field-row" style="margin-top:8px;"><span class="field-label">Cyst count / measurement</span>${pillGroupHtml(`data-korgan="Kidneys" data-kside="${side}" data-kcystmode="1"`, countOpts, sideState.cystMode||'single')}</div>`;
+          locHtml += `<div class="field-row" style="margin-top:8px;"><span class="field-label">Cyst type(s) present (select all that apply)</span>${pillGroupMultiHtml(`data-korgan="Kidneys" data-kside="${side}" data-kloc="cystTypes"`, [{id:'simple',label:'Simple (anechoic)'},{id:'complex',label:'Complex'}], cystTypesSel)}</div>`;
+          if(cystTypesSel.includes('simple')){
+            locHtml += `<div class="field-row" style="margin-top:8px;"><span class="field-label">Simple cyst location (select all that apply)</span>${pillGroupMultiHtml(`data-korgan="Kidneys" data-kside="${side}" data-kloc="cystLoc"`, cystOpts, sideState.cystLoc)}</div>`;
+            locHtml += `<div class="field-row" style="margin-top:8px;"><span class="field-label">Simple cyst count / measurement</span>${pillGroupHtml(`data-korgan="Kidneys" data-kside="${side}" data-kcystmode="1"`, countOpts, sideState.cystMode||'single')}</div>`;
+          }
+          if(cystTypesSel.includes('complex')){
+            const cystFeatOpts = Object.keys(KIDNEY_CYST_FEATURE_LABELS).map(id=>({id, label:KIDNEY_CYST_FEATURE_LABELS[id]}));
+            locHtml += `<div class="field-row" style="margin-top:8px;"><span class="field-label">Complex cyst location (select all that apply)</span>${pillGroupMultiHtml(`data-korgan="Kidneys" data-kside="${side}" data-kloc="complexCystLoc"`, cystOpts, sideState.complexCystLoc||[])}</div>`;
+            locHtml += `<div class="field-row" style="margin-top:8px;"><span class="field-label">Complex cyst count / measurement</span>${pillGroupHtml(`data-korgan="Kidneys" data-kside="${side}" data-kcomplexcystmode="1"`, countOpts, sideState.complexCystMode||'single')}</div>`;
+            locHtml += `<div class="field-row" style="margin-top:8px;"><span class="field-label">Complex features (select all that apply)</span>${pillGroupMultiHtml(`data-korgan="Kidneys" data-kside="${side}" data-kloc="cystFeatures"`, cystFeatOpts, sideState.cystFeatures||[])}</div>`;
+          }
         }
         if(sideState.additional.stone){
           const stoneOpts = Object.keys(KIDNEY_STONE_LOCATIONS).map(id=>({id, label:KIDNEY_STONE_LOCATIONS[id]}));
@@ -4326,8 +4751,8 @@ function buildOrganCardsInner(){
         <div class="addl-list">
           ${ffChk('rightThorax','Right hemithorax')}
           ${ffChk('leftThorax','Left hemithorax')}
-          ${ffChk('hrs','HRS (hepatorenal space)')}
-          ${ffChk('srs','SRS (splenorenal space)')}
+          ${ffChk('hrs','PHS (perihepatic space)')}
+          ${ffChk('srs','PSS (perisplenic space)')}
           ${ffChk('paracolic','Paracolic gutter')}
           ${ffChk('pelvic','Pelvic space')}
         </div>
@@ -4423,6 +4848,9 @@ function buildOrganCardsInner(){
       const arr = builderState.Kidneys[side][locKey] || [];
       const idx = arr.indexOf(val);
       if(idx>-1){ arr.splice(idx,1); } else { arr.push(val); }
+      // Cyst type(s) present can't be emptied out while the Cyst finding is
+      // still checked — a cyst has to be at least simple or complex.
+      if(locKey==='cystTypes' && arr.length===0){ arr.push('simple'); }
       builderState.Kidneys[side][locKey] = arr;
       buildOrganCards();
       generateReport();
@@ -4438,6 +4866,13 @@ function buildOrganCardsInner(){
   container.querySelectorAll('[data-kcystmode]').forEach(btn=>{
     btn.addEventListener('click', e=>{
       builderState.Kidneys[e.currentTarget.dataset.kside].cystMode = e.currentTarget.dataset.pillValue;
+      buildOrganCards();
+      generateReport();
+    });
+  });
+  container.querySelectorAll('[data-kcomplexcystmode]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      builderState.Kidneys[e.currentTarget.dataset.kside].complexCystMode = e.currentTarget.dataset.pillValue;
       buildOrganCards();
       generateReport();
     });
@@ -4607,13 +5042,14 @@ function buildOrganCardsInner(){
 
 // Template-style labels (match user's report wording per line)
 const TIRADS_LINE_LABELS = {
-  composition:{cystic:'cystic or almost completely cystic', spongiform:'spongiform', mixed:'mixed cystic and solid', solid:'almost completely solid', undet:'cannot be determined due to calcification'},
-  echogenicity:{anechoic:'anechoic', hyper_iso:'isoechoic or hyperechoic', hypo:'hypoechoic', veryhypo:'very hypoechoic', undet:'cannot be determined'},
+  composition:{cystic:'cystic', almostcystic:'almost completely cystic', spongiform:'spongiform', mixed:'mixed cystic and solid', solid:'almost completely solid', undet:'cannot be determined due to calcification'},
+  echogenicity:{anechoic:'anechoic', hyper:'hyperechoic', iso:'isoechoic', hypo:'hypoechoic', veryhypo:'very hypoechoic', undet:'cannot be determined'},
   shape:{wider:'wider than tall', taller:'taller than wide'},
-  margin:{smooth:'smooth', illdefined:'ill-defined', lobulated:'lobulated or irregular', extrathyroidal:'extra-thyroidal extension', undet:'cannot be determined'},
-  foci:{none:'none or large comet-tail artifacts', macro:'macrocalcifications', rim:'peripheral (rim) calcifications', punctate:'punctate echogenic foci'}
+  margin:{smooth:'smooth', illdefined:'ill-defined', lobulated:'lobulated or irregular', extrathyroidal:'extra-thyroidal extension', undet:'cannot be determined'}
+  // foci is multi-select — use tiradsFociLineText()/tiradsFociPts() instead of a lookup here.
 };
 function tiradsOptPts(cat, id){
+  if(cat==='foci') return tiradsFociPts(id);
   const o = TIRADS_CATEGORIES[cat].options.find(x=>x.id===id);
   return o ? o.pts : 0;
 }
@@ -5306,6 +5742,283 @@ function generateScrotalReport(){
   runAutoCheck('', impression);
 }
 
+function buildSoftTissueCards(){
+  const c = document.getElementById('softTissueCards');
+  const ST = builderState.SoftTissue;
+  const txt = (key, val, ph, width)=>`<input type="text" data-st-text="${key}" value="${(val!=null?val:ST[key])||''}" placeholder="${ph||''}" style="width:${width||'100%'};background:#0d1218;border:1px solid var(--line);border-radius:5px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12.5px;padding:6px 8px;">`;
+
+  let html = `<div class="organ-card span-all"><h3><span class="dot"></span>Soft Tissue Mass</h3>
+    <p class="hint" style="margin:0;">Tap through each field — Findings and Impression update live below.</p></div>`;
+
+  html += `<div class="organ-card span-all">
+    <h3><span class="dot"></span>Location &amp; composition</h3>
+    <div class="field-row"><span class="field-label">Location in body</span>${pillGroupHtml('data-st-pill="locationBody"', [
+      {id:'nonspecific',label:'Nonspecific'},
+      {id:'bursa',label:'Typical for a bursa'},
+      {id:'ganglion',label:'Typical for a ganglion'},
+      {id:'lymphnode',label:'Typical for a lymph node'},
+      {id:'other',label:'Typical for a (other)'}
+    ], ST.locationBody)}</div>
+    ${ST.locationBody==='other' ? `<div class="field-row" style="margin-top:8px;"><span class="field-label">Specify structure</span>${txt('locationBodyOther', ST.locationBodyOther, 'e.g. foreign body granuloma', '320px')}</div>` : ''}
+    <div class="field-row" style="margin-top:10px;"><span class="field-label">Location in tissues</span>${pillGroupHtml('data-st-pill="locationTissue"', [
+      {id:'subcutaneous',label:'Subcutaneous'},
+      {id:'intramuscular',label:'Intramuscular'},
+      {id:'both',label:'Subcutaneous and intramuscular'}
+    ], ST.locationTissue)}</div>
+    <div class="field-row" style="margin-top:10px;"><span class="field-label">Composition</span>${pillGroupHtml('data-st-pill="composition"', [
+      {id:'entirelySolid',label:'Entirely solid'},
+      {id:'predominantlySolid',label:'Predominantly solid'},
+      {id:'predominantlyCystic',label:'Predominantly cystic'},
+      {id:'entirelyCystic',label:'Entirely cystic'}
+    ], ST.composition)}</div>
+    <div class="measure-grid" style="margin-top:10px;">
+      <div class="mfield"><label>Cranio-caudal (cm)</label><input type="text" inputmode="decimal" data-st-text="sizeCC" value="${ST.sizeCC||''}" placeholder="cm"></div>
+      <div class="mfield"><label>Transverse (cm)</label><input type="text" inputmode="decimal" data-st-text="sizeTR" value="${ST.sizeTR||''}" placeholder="cm"></div>
+      <div class="mfield"><label>Anterior-posterior (cm)</label><input type="text" inputmode="decimal" data-st-text="sizeAP" value="${ST.sizeAP||''}" placeholder="cm"></div>
+    </div>
+  </div>`;
+
+  html += `<div class="organ-card span-all">
+    <h3><span class="dot"></span>Sonographic characteristics</h3>
+    <div class="field-row"><span class="field-label">Involved structures (select all that apply)</span>${pillGroupMultiHtml('data-st-multi="involved"', [
+      {id:'none',label:'No adjacent structures'},
+      {id:'dermis',label:'Dermis'},
+      {id:'nerve',label:'Nerve'},
+      {id:'tendon',label:'Tendon'},
+      {id:'bone',label:'Bone'},
+      {id:'joint',label:'Joint'},
+      {id:'vessels',label:'Vessels'}
+    ], ST.involved)}</div>
+    <div class="field-row" style="margin-top:10px;"><span class="field-label">Sound attenuation</span>${pillGroupHtml('data-st-pill="attenuation"', [
+      {id:'none',label:'None'},
+      {id:'increased',label:'Increased through transmission'},
+      {id:'shadowing',label:'Posterior shadowing'}
+    ], ST.attenuation)}</div>
+    <div class="field-row" style="margin-top:10px;"><span class="field-label">Echogenicity (vs. surrounding tissues)</span>${pillGroupHtml('data-st-pill="echogenicity"', [
+      {id:'anechoic',label:'Anechoic'},
+      {id:'hypoechoic',label:'Hypoechoic'},
+      {id:'isoechoic',label:'Isoechoic'},
+      {id:'hyperechoic',label:'Hyperechoic'},
+      {id:'heterogeneous',label:'Heterogeneous'}
+    ], ST.echogenicity)}</div>
+    <div class="field-row" style="margin-top:10px;"><span class="field-label">Margins</span>${pillGroupHtml('data-st-pill="margins"', [
+      {id:'smooth',label:'Smooth'},
+      {id:'illdefined',label:'Ill-defined'},
+      {id:'lobulated',label:'Lobulated'},
+      {id:'irregular',label:'Irregular'},
+      {id:'infiltrative',label:'Infiltrative'}
+    ], ST.margins)}</div>
+    <div class="field-row" style="margin-top:10px;"><span class="field-label">Vascularity</span>${pillGroupHtml('data-st-pill="vascularity"', [
+      {id:'none',label:'No internal vascularity'},
+      {id:'barely',label:'Barely detectable internal'},
+      {id:'readily',label:'Readily detectable internal'},
+      {id:'abundant',label:'Abundant internal'},
+      {id:'peripheral',label:'Peripheral, no internal'}
+    ], ST.vascularity)}</div>
+    <div class="field-row" style="margin-top:10px;"><span class="field-label">Doppler mode</span>${pillGroupHtml('data-st-pill="dopplerMode"', [
+      {id:'color',label:'Color'},
+      {id:'power',label:'Power'},
+      {id:'colorpower',label:'Color and Power'}
+    ], ST.dopplerMode)}</div>
+    <div class="field-row" style="margin-top:10px;"><span class="field-label">Other features (select all that apply)</span>${pillGroupMultiHtml('data-st-multi="otherFeatures"', [
+      {id:'multilocularity',label:'Multilocularity'},
+      {id:'compressibility',label:'Compressibility'},
+      {id:'mobileEchoes',label:'Mobile low-level echoes'},
+      {id:'calcifications',label:'Calcifications'},
+      {id:'other',label:'Other'}
+    ], ST.otherFeatures)}</div>
+    ${(ST.otherFeatures||[]).includes('other') ? `<div class="field-row" style="margin-top:8px;"><span class="field-label">Specify other feature</span>${txt('otherFeaturesText', ST.otherFeaturesText, 'describe', '320px')}</div>` : ''}
+  </div>`;
+
+  html += `<div class="organ-card span-all">
+    <h3><span class="dot"></span>Impression</h3>
+    <div class="field-row"><span class="field-label">Lesion is</span>${pillGroupHtml('data-st-pill="impressionType"', [
+      {id:'benign',label:'Typical of a benign lesion'},
+      {id:'neoplasm',label:'Soft tissue neoplasm, nonspecific'},
+      {id:'notmass',label:'Not a mass'},
+      {id:'lymphadenopathy',label:'Lymphadenopathy'}
+    ], ST.impressionType)}</div>
+    ${ST.impressionType==='benign' ? `<div class="field-row" style="margin-top:8px;"><span class="field-label">Benign lesion type</span>${txt('benignType', ST.benignType, 'e.g. lipoma, hemangioma', '320px')}</div>` : ''}
+    ${ST.impressionType==='notmass' ? `<div class="field-row" style="margin-top:8px;"><span class="field-label">Consistent with a</span>${txt('notMassType', ST.notMassType, 'e.g. prominent muscle belly', '320px')}</div>` : ''}
+    ${ST.impressionType==='lymphadenopathy' ? `<div class="field-row" style="margin-top:8px;"><span class="field-label">Lymph node is most likely</span>${pillGroupHtml('data-st-pill="lymphNodeType"', [
+      {id:'reactive',label:'Reactive'},
+      {id:'metastatic',label:'Metastatic disease'},
+      {id:'lymphoma',label:'Lymphoma'},
+      {id:'nonspecific',label:'Otherwise nonspecific'}
+    ], ST.lymphNodeType)}</div>` : ''}
+    <div class="field-row" style="margin-top:12px;"><span class="field-label">Recommend (select all that apply)</span>${pillGroupMultiHtml('data-st-multi="recommend"', [
+      {id:'nofurther',label:'No further evaluation'},
+      {id:'followup',label:'Follow-up ultrasound'},
+      {id:'mri',label:'MRI with contrast'},
+      {id:'biopsy',label:'US guided biopsy'},
+      {id:'aspiration',label:'US guided aspiration'},
+      {id:'surgical',label:'Surgical consultation'}
+    ], ST.recommend)}</div>
+    ${(ST.recommend||[]).includes('followup') ? `<div class="field-row" style="margin-top:8px;"><span class="field-label">Follow-up interval (weeks)</span>${txt('followUpWeeks', ST.followUpWeeks, 'e.g. 6', '120px')}</div>` : ''}
+  </div>`;
+
+  c.innerHTML = html;
+
+  const rebuild = ()=>{ buildSoftTissueCards(); generateReport(); };
+  const regen = ()=>generateReport();
+
+  c.querySelectorAll('[data-st-pill]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      builderState.SoftTissue[e.currentTarget.dataset.stPill] = e.currentTarget.dataset.pillValue;
+      rebuild();
+    });
+  });
+  c.querySelectorAll('[data-st-text]').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      builderState.SoftTissue[e.target.dataset.stText] = e.target.value;
+      regen();
+    });
+  });
+  c.querySelectorAll('[data-st-multi]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const key = e.currentTarget.dataset.stMulti;
+      const val = e.currentTarget.dataset.pillValue;
+      const arr = (builderState.SoftTissue[key]||[]).slice();
+      const idx = arr.indexOf(val);
+      if(key==='involved'){
+        // "No adjacent structures" is mutually exclusive with every real structure —
+        // same fix pattern as the TI-RADS "None" foci bug: selecting a real structure
+        // clears "none", and selecting "none" clears everything else.
+        if(val==='none'){
+          builderState.SoftTissue[key] = idx>=0 ? [] : ['none'];
+        } else if(idx>=0){
+          arr.splice(idx,1);
+          builderState.SoftTissue[key] = arr;
+        } else {
+          const noneIdx = arr.indexOf('none');
+          if(noneIdx>=0) arr.splice(noneIdx,1);
+          arr.push(val);
+          builderState.SoftTissue[key] = arr;
+        }
+      } else {
+        if(idx>=0){ arr.splice(idx,1); } else { arr.push(val); }
+        builderState.SoftTissue[key] = arr;
+      }
+      rebuild();
+    });
+  });
+}
+
+function generateSoftTissueReport(){
+  const ST = builderState.SoftTissue;
+  const lines = [];
+
+  const bodyLocMap = {
+    nonspecific: 'nonspecific',
+    bursa: 'typical for a bursa',
+    ganglion: 'typical for a ganglion',
+    lymphnode: 'typical for a lymph node',
+    other: (ST.locationBodyOther && ST.locationBodyOther.trim()!=='') ? `typical for a ${ST.locationBodyOther.trim()}` : 'typical for a described structure'
+  };
+  const tissueMap = {
+    subcutaneous: 'the subcutaneous tissues',
+    intramuscular: 'the muscle',
+    both: 'the subcutaneous tissues and muscle'
+  };
+  lines.push(`There is a soft tissue lesion within ${tissueMap[ST.locationTissue]||tissueMap.subcutaneous}, the location of which is ${bodyLocMap[ST.locationBody]||bodyLocMap.nonspecific}.`);
+
+  const compMap = {
+    entirelySolid: 'entirely solid',
+    predominantlySolid: 'predominantly solid',
+    predominantlyCystic: 'predominantly cystic',
+    entirelyCystic: 'entirely cystic'
+  };
+  lines.push(`The lesion is ${compMap[ST.composition]||compMap.entirelySolid} in composition.`);
+
+  const cc=(ST.sizeCC||'').trim(), tr=(ST.sizeTR||'').trim(), ap=(ST.sizeAP||'').trim();
+  if(cc || tr || ap){
+    lines.push(`It measures ${cc||'___'} cm (cranio-caudal) x ${tr||'___'} cm (transverse) x ${ap||'___'} cm (anterior-posterior).`);
+  }
+
+  const marginMap = {smooth:'smooth', illdefined:'ill-defined', lobulated:'lobulated', irregular:'irregular', infiltrative:'infiltrative'};
+  lines.push(`The margins are ${marginMap[ST.margins]||marginMap.smooth}.`);
+
+  const echoMap = {anechoic:'anechoic', hypoechoic:'hypoechoic', isoechoic:'isoechoic', hyperechoic:'hyperechoic', heterogeneous:'heterogeneous'};
+  lines.push(`The lesion is ${echoMap[ST.echogenicity]||echoMap.isoechoic} relative to the surrounding tissues.`);
+
+  const attnMap = {
+    none: 'No posterior acoustic attenuation is seen.',
+    increased: 'There is increased through-transmission posteriorly.',
+    shadowing: 'There is posterior acoustic shadowing.'
+  };
+  lines.push(attnMap[ST.attenuation]||attnMap.none);
+
+  const involved = (ST.involved && ST.involved.length) ? ST.involved : ['none'];
+  if(involved.includes('none')){
+    lines.push('No adjacent structures are involved.');
+  } else {
+    const structNames = {dermis:'dermis', nerve:'nerve', tendon:'tendon', bone:'bone', joint:'joint', vessels:'vessels'};
+    const list = involved.map(k=>structNames[k]).filter(Boolean);
+    if(list.length){
+      const joined = list.length===1 ? list[0] : list.slice(0,-1).join(', ')+' and '+list[list.length-1];
+      lines.push(`The ${joined} ${list.length>1?'are':'is'} involved.`);
+    }
+  }
+
+  const vascMap = {
+    none: 'no internal vascularity',
+    barely: 'barely detectable internal vascularity',
+    readily: 'readily detectable internal vascularity',
+    abundant: 'abundant internal vascularity',
+    peripheral: 'peripheral vascularity but no internal vascularity'
+  };
+  const dopplerMap = {color:'color', power:'power', colorpower:'color and power'};
+  lines.push(`On ${dopplerMap[ST.dopplerMode]||dopplerMap.color} Doppler interrogation, the lesion shows ${vascMap[ST.vascularity]||vascMap.none}.`);
+
+  const featNames = {multilocularity:'multilocularity', compressibility:'compressibility', mobileEchoes:'mobile low-level internal echoes', calcifications:'calcifications'};
+  const feat = ST.otherFeatures || [];
+  if(feat.length){
+    const list = feat.map(k=> k==='other' ? ((ST.otherFeaturesText||'').trim() || 'other features') : featNames[k]).filter(Boolean);
+    if(list.length){
+      const joined = list.length===1 ? list[0] : list.slice(0,-1).join(', ')+' and '+list[list.length-1];
+      lines.push(`Additional features include ${joined}.`);
+    }
+  }
+
+  // ----- IMPRESSION -----
+  const imp = [];
+  if(ST.impressionType==='neoplasm'){
+    imp.push('Lesion as described above, consistent with a soft tissue neoplasm but otherwise nonspecific.');
+  } else if(ST.impressionType==='notmass'){
+    const nt = (ST.notMassType||'').trim();
+    imp.push(`Not a mass. It is consistent with a${nt?` ${nt}`:'n unspecified normal structure'}.`);
+  } else if(ST.impressionType==='lymphadenopathy'){
+    imp.push('Lesion as described above, consistent with lymphadenopathy.');
+    const lnMap = {reactive:'reactive', metastatic:'metastatic disease', lymphoma:'lymphoma'};
+    if(ST.lymphNodeType && lnMap[ST.lymphNodeType]){
+      imp.push(`It is most likely ${lnMap[ST.lymphNodeType]}.`);
+    } else {
+      imp.push('It is otherwise nonspecific.');
+    }
+  } else {
+    // default/'benign'
+    const bt = (ST.benignType||'').trim();
+    imp.push(`Lesion as described above, typical of a benign ${bt||'lesion'}.`);
+  }
+
+  const recMap = {
+    nofurther: 'No further evaluation other than periodic self-examination.',
+    followup: `Follow-up ultrasound in ${(ST.followUpWeeks||'').trim()||'___'} weeks.`,
+    mri: 'MRI with contrast.',
+    biopsy: 'Ultrasound guided biopsy.',
+    aspiration: 'Ultrasound guided aspiration.',
+    surgical: 'Surgical consultation.'
+  };
+  (ST.recommend||[]).forEach(k=>{ if(recMap[k]) imp.push(recMap[k]); });
+
+  const findingsText = lines.join('\n');
+  const impressionText = imp.map(l=>`- ${l}`).join('\n').toUpperCase();
+
+  document.getElementById('builderFindings').textContent = findingsText;
+  document.getElementById('builderImpression').textContent = impressionText;
+  runAutoCheck(findingsText, impressionText);
+}
+
 function generateScoliosisReport(){
   const S = builderState.Scoliosis;
   const lines = [];
@@ -5356,6 +6069,7 @@ function riserRoman(g){ return {'0':'0','1':'I','2':'II','3':'III','4':'IV','5':
 
 function generateXrayReport(){
   const X = builderState.Xray;
+  if(X.subtype==='chest'){ return generateChestXrayReport(); }
   const lines = [];
   const impressionLines = [];
 
@@ -5421,6 +6135,68 @@ function generateXrayReport(){
   runAutoCheck(findingsText, impressionText);
 }
 
+// Chest X-ray: additive findings pattern (mirrors the Gallbladder/Kidneys approach) —
+// a fixed 7-line normal template with individual lines swapped/inserted per finding,
+// and a composed IMPRESSION whose "Negative ___ findings." summary line reflects which
+// of the cardiac/pulmonary systems remain unremarkable given what's currently checked.
+// Thoracic spondylosis affects only the osseous line + its own impression bullet — it
+// never changes the cardiac/pulmonary summary word.
+// Lung pattern (normal/interstitial pneumonia/pneumonia) is mutually exclusive — it's
+// a single pill group, not a checkbox, since the lung line can only describe one
+// pattern at a time. Interstitial pneumonia also uses its own hilar/costophrenic
+// phrasing ("Hili are not enlarged." / "...sinuses are sharp.") per the user's exact
+// dictated wording — Pneumonia keeps the standard hilar/costophrenic lines.
+const CHEST_LUNG_LINES = {
+  normal:       {lung:'Both lungs are clear.', hilar:'Hilar structures are not enlarged.', diaphragm:'The hemidiaphragms and lateral costophrenic sinuses are intact.'},
+  interstitial: {lung:'Parahilar and peribronchial infiltrates are noted bilaterally.', hilar:'Hili are not enlarged.', diaphragm:'The lateral costophrenic sinuses are sharp.'},
+  pneumonia:    {lung:'Reticular opacities are seen in both lungs.', hilar:'Hilar structures are not enlarged.', diaphragm:'The hemidiaphragms and lateral costophrenic sinuses are intact.'}
+};
+const CHEST_LUNG_IMPRESSION = {interstitial:'Interstitial pattern of pneumonia.', pneumonia:'Pneumonia.'};
+
+function generateChestXrayReport(){
+  const CX = builderState.Xray.chest;
+  const lp = CHEST_LUNG_LINES[CX.lungPattern] || CHEST_LUNG_LINES.normal;
+  const lines = [];
+
+  lines.push(lp.lung);
+  lines.push(CX.cardiomegaly ? 'The heart is enlarged.' : 'Heart size is within normal limits.');
+  if(CX.atherosclerosis) lines.push('Calcification is present in the aortic knob.');
+  lines.push('Pulmonary vascularity is normal.');
+  lines.push(lp.hilar);
+  lines.push(lp.diaphragm);
+  lines.push(CX.spondylosis ? 'Marginal spurs are seen in the lateral endplates of the thoracic vertebrae.' : 'The visualized osseous structures are unremarkable.');
+
+  const pulmonaryOK = CX.lungPattern==='normal';
+  const anyFinding = !pulmonaryOK || CX.atherosclerosis || CX.spondylosis || CX.cardiomegaly;
+  let impressionText;
+  if(!anyFinding){
+    impressionText = 'NEGATIVE CHEST FINDINGS.';
+  } else {
+    const impressionLines = [];
+    // Only claim a system is negative when it's actually clean. A lung pattern finding
+    // means pulmonary itself is the abnormality, so no "Negative ___" summary applies
+    // at all in that case — matches the user's own examples (single pathology bullet,
+    // no summary line) even though the heart/bones may still be normal alongside it.
+    if(pulmonaryOK){
+      // Atherosclerosis of the aorta counts against the "cardiac" side of the summary
+      // (a mediastinal/aortic-silhouette finding), same as cardiomegaly.
+      const cardiacOK = !CX.cardiomegaly && !CX.atherosclerosis;
+      const summaryWord = cardiacOK ? 'cardiopulmonary' : 'pulmonary';
+      impressionLines.push(`Negative ${summaryWord} findings.`);
+    }
+    if(!pulmonaryOK) impressionLines.push(CHEST_LUNG_IMPRESSION[CX.lungPattern]);
+    if(CX.atherosclerosis) impressionLines.push('Atherosclerosis of the aorta.');
+    if(CX.spondylosis) impressionLines.push('Thoracic spondylosis.');
+    if(CX.cardiomegaly) impressionLines.push('Cardiomegaly.');
+    impressionText = impressionLines.map(l=>`- ${l}`).join('\n').toUpperCase();
+  }
+
+  const findingsText = lines.join('\n');
+  document.getElementById('builderFindings').textContent = findingsText;
+  document.getElementById('builderImpression').textContent = impressionText;
+  runAutoCheck(findingsText, impressionText);
+}
+
 function generateFetalReport(){
   const F = builderState.Fetal;
   const lines = [];
@@ -5429,19 +6205,21 @@ function generateFetalReport(){
   const row = (label, value)=> `${(label+':').padEnd(LW)}${value}`;
 
   // General survey block
+  const isTwin = F.fetusCount==='Twin' || F.fetusCount==='Triplet';
   lines.push('GENERAL SURVEY');
   lines.push('');
   lines.push(row('No. of fetus', F.fetusCount||'___'));
-  lines.push(row('Presentation', F.presentation||'___'));
-  lines.push(row('Fetal heart tone', F.fht && F.fht.trim()!=='' ? F.fht.trim()+' bpm' : '___ bpm'));
-  lines.push(row('Amniotic fluid index', `${F.afi && F.afi.trim()!=='' ? F.afi.trim()+' cm' : '___ cm'} (Normal value 5-25 cm)`));
+  const fhtText = (v)=> v && String(v).trim()!=='' ? String(v).trim()+' bpm' : '___ bpm';
+  const afiText = (v)=> `${v && String(v).trim()!=='' ? String(v).trim()+' cm' : '___ cm'} (Normal value 5-25 cm)`;
+  lines.push(row('Presentation', isTwin ? `Fetus A: ${F.presentation||'___'}, Fetus B: ${F.fetusB.presentation||'___'}` : (F.presentation||'___')));
+  lines.push(row('Fetal heart tone', isTwin ? `Fetus A: ${fhtText(F.fht)}, Fetus B: ${fhtText(F.fetusB.fht)}` : fhtText(F.fht)));
+  lines.push(row('Amniotic fluid index', isTwin ? `Fetus A: ${afiText(F.afi)}, Fetus B: ${afiText(F.fetusB.afi)}` : afiText(F.afi)));
   lines.push(row('Placenta', `${F.placentaLocation||'___'} grade ${effectivePlacentaGrade(F)}`));
-  lines.push(row('Gender', F.gender||'___'));
+  lines.push(row('Gender', isTwin ? `Fetus A: ${F.gender||'___'}, Fetus B: ${F.fetusB.gender||'___'}` : (F.gender||'___')));
   lines.push(row('Others', F.nuchalCord ? 'Nuchal cord coil noted at the time of the scan.' : 'No nuchal cord coil at the time of the scan.'));
   lines.push('');
 
   // Biometry
-  const isTwin = F.fetusCount==='Twin' || F.fetusCount==='Triplet';
   lines.push(isTwin ? 'Biometry — Fetus A' : 'Biometry');
   lines.push('');
   const crlGaA = gaWeeksFromCRL(F.crl);
@@ -5995,7 +6773,7 @@ function generateNeckReport(){
         lines.push(`Echogenicity: ${TIRADS_LINE_LABELS.echogenicity[n.echogenicity]} (${tiradsOptPts('echogenicity',n.echogenicity)})`);
         lines.push(`Shape: ${TIRADS_LINE_LABELS.shape[n.shape]} (${tiradsOptPts('shape',n.shape)})`);
         lines.push(`Margin: ${TIRADS_LINE_LABELS.margin[n.margin]} (${tiradsOptPts('margin',n.margin)})`);
-        lines.push(`Echogenic foci: ${TIRADS_LINE_LABELS.foci[n.foci]} (${tiradsOptPts('foci',n.foci)})`);
+        lines.push(`Echogenic foci: ${tiradsFociLineText(n.foci)} (${tiradsOptPts('foci',n.foci)})`);
       }
       lines.push(`Total points: ${pts}`);
       lines.push(`ACR TIRADS category: ${cat.tr} ${cat.desc}`);
@@ -6007,7 +6785,7 @@ function generateNeckReport(){
         if(n.echogenicity==='undet') obscured.push('echogenicity');
         if(n.margin==='undet') obscured.push('margins');
         const joined = obscured.length===1 ? obscured[0] : obscured.slice(0,-1).join(', ') + ' and ' + obscured[obscured.length-1];
-        const cause = n.foci==='rim'
+        const cause = tiradsFociArray(n.foci).includes('rim')
           ? 'Peripheral (rim) calcification with posterior acoustic shadowing obscures the deep aspect of the nodule'
           : 'Calcification with posterior acoustic shadowing obscures the deep aspect of the nodule';
         lines.push(`Note: ${cause}, precluding assessment of the ${joined}. Points assigned per ACR TI-RADS rules for indeterminate features.`);
@@ -6186,6 +6964,7 @@ function generateReport(){
   if(builderState.modality==='duplex'){ return generateDuplexReport(); }
   if(builderState.modality==='sonomammo'){ return generateSonomammoReport(); }
   if(builderState.modality==='scrotal'){ return generateScrotalReport(); }
+  if(builderState.modality==='softtissue'){ return generateSoftTissueReport(); }
   const {findingsParas, impressionLines, anyAbnormal} = buildAbdomenParas();
 
   let findingsText = findingsParas.join('\n\n');
@@ -6250,6 +7029,12 @@ function buildAbdomenParas(){
     const augM = Object.assign({}, normalizeSegmentFields(st.measurements), {liverDimsToken: liverDimsText(st.measurements), portalVeinRaw: st.measurements.portalVein});
     const composed = composeLiverDiffuse(st, augM);
     let para = composed.findings;
+    // When the study has a dedicated Biliary & pancreatic ducts section (Hepatobiliary
+    // Tree), that section already states whether the CBD is dilated — drop "and CBD"
+    // from the liver sentence so CBD patency isn't asserted twice in one report.
+    if(studyIncludes('Ducts')){
+      para = para.replace('Intrahepatic ducts and CBD are not dilated.', 'Intrahepatic ducts are not dilated.');
+    }
     composed.impressions.forEach(imp=>{ impressionLines.push(imp); anyAbnormal=true; });
     // Portal vein: normal <1.3 cm. If enlarged (>=1.3 cm), suggests portal hypertension.
     const pvVal = parseFloat(st.measurements.portalVein);
@@ -6284,7 +7069,7 @@ function buildAbdomenParas(){
     // append finding clauses in a sensible order: stones, sludge, polyp
     const clauses = [];
     if(!noContents && st.findings.stones) clauses.push(fillTemplate(gbStonesClause(st.stoneMode, st.stoneShadowing), augM));
-    if(!noContents && st.findings.sludge) clauses.push(fillTemplate(gbSludgeClause(), augM));
+    if(!noContents && st.findings.sludge) clauses.push(fillTemplate(gbSludgeClause(st.sludgeType), augM));
     if(!noContents && st.findings.polyp) clauses.push(fillTemplate(gbPolypClause(st.polypCount, st.polypMode), augM));
     if(!noContents && st.findings.adenomyomatosis) clauses.push(gbAdenomyomatosisClause());
     if(clauses.length) para += ' ' + clauses.join(' ');
@@ -6306,7 +7091,7 @@ function buildAbdomenParas(){
       impressionLines.push(stoneImp); anyAbnormal=true;
     }
     if(!noContents && st.findings.polyp){ impressionLines.push(st.polypCount==='single' ? 'Gallbladder polyp.' : 'Gallbladder polyps.'); anyAbnormal=true; }
-    if(!noContents && st.findings.sludge){ impressionLines.push(GB_IMPRESSIONS.sludge); anyAbnormal=true; }
+    if(!noContents && st.findings.sludge){ impressionLines.push(st.sludgeType==='tumefactive' ? GB_IMPRESSIONS.sludgeTumefactive : GB_IMPRESSIONS.sludge); anyAbnormal=true; }
     if(!noContents && st.findings.adenomyomatosis){ impressionLines.push(GB_IMPRESSIONS.adenomyomatosis); anyAbnormal=true; }
   }
 
@@ -6380,8 +7165,9 @@ function buildAbdomenParas(){
     aortaImpressionLines(aoSt).forEach(l=>{ impressionLines.push(l); anyAbnormal=true; });
   }
 
-  // Kidneys — present in every study type
-  {
+  // Kidneys — only if the selected study type includes it (e.g. NOT Hepatobiliary
+  // Tree, Lower Abdomen, or Pelvis studies, which never scan the kidneys)
+  if(studyIncludes('Kidneys')){
     const st = builderState.Kidneys;
     const augM = Object.assign({}, st.measurements);
     // Add "cm" to each comma-separated entry in the kidney all-sizes fields.
@@ -6534,14 +7320,14 @@ function buildAbdomenParas(){
     }
 
     function impressionTextFor(type, side){
-      // Determine plurality for cyst/stone from the side's mode
+      // Determine plurality for stone from the side's mode (cyst plurality is
+      // worked out per-type inside the 'cyst' case below, since simple and
+      // complex cysts each have their own mode now).
       const modeOf = (sd, key)=> (st[sd] && st[sd][key]) || 'single';
-      let cystPlural, stonePlural;
+      let stonePlural;
       if(side==='bilateral'){
-        cystPlural = modeOf('right','cystMode')!=='single' || modeOf('left','cystMode')!=='single';
         stonePlural = modeOf('right','stoneMode')!=='single' || modeOf('left','stoneMode')!=='single';
       } else {
-        cystPlural = modeOf(side,'cystMode')!=='single';
         stonePlural = modeOf(side,'stoneMode')!=='single';
       }
       switch(type){
@@ -6554,9 +7340,33 @@ function buildAbdomenParas(){
         case 'rpd-3': return side==='bilateral' ? 'Bilateral grade III renal parenchymal disease.' : `${cap(side)} grade III renal parenchymal disease.`;
         case 'ckd': return side==='bilateral' ? 'Findings consistent with chronic kidney disease, bilateral (small, hyperechoic kidneys).' : `Findings consistent with chronic kidney disease, ${side} (small, hyperechoic kidney).`;
         case 'smallkidney': return side==='bilateral' ? 'Small kidneys bilaterally, likely chronic in nature. Clinical correlation advised.' : `Small ${side} kidney, likely chronic in nature. Clinical correlation advised.`;
-        case 'cyst':
-          if(side==='bilateral') return cystPlural ? 'Bilateral simple renal cysts.' : 'Bilateral simple renal cysts.';
-          return cystPlural ? `Simple ${side} renal cysts.` : `Simple ${side} renal cyst.`;
+        case 'cyst': {
+          // A kidney can carry simple and complex cysts at once now. Complex
+          // cysts (Bosniak-type features — calcification, mural nodule) get
+          // their own wording plus a follow-up recommendation, distinct from
+          // a routine simple cyst; when both types are present on the same
+          // side, the line mentions both and still carries the recommendation.
+          // By the time 'bilateral' is requested here, the caller has already
+          // verified both sides share the same set of cyst types (see the
+          // sideImpressionKeys merge loop below) — mismatched sides are split
+          // into separate right/left lines before reaching this function.
+          const typesOf = (sd)=> (st[sd] && st[sd].cystTypes && st[sd].cystTypes.length) ? st[sd].cystTypes : ['simple'];
+          const rec = ' Recommend further characterization with contrast-enhanced CT or MRI (Bosniak classification).';
+          if(side==='bilateral'){
+            const types = typesOf('right');
+            const hasSimple = types.includes('simple'), hasComplex = types.includes('complex');
+            if(hasSimple && hasComplex) return `Simple and complex renal cysts, bilateral.${rec}`;
+            if(hasComplex) return `Complex renal cysts, bilateral.${rec}`;
+            return 'Bilateral simple renal cysts.';
+          }
+          const types = typesOf(side);
+          const hasSimple = types.includes('simple'), hasComplex = types.includes('complex');
+          const complexPlural = (st[side].complexCystMode||'single')!=='single';
+          const simplePlural = (st[side].cystMode||'single')!=='single';
+          if(hasSimple && hasComplex) return `Simple and complex ${side} renal cysts.${rec}`;
+          if(hasComplex) return `Complex ${side} renal cyst${complexPlural?'s':''}.${rec}`;
+          return simplePlural ? `Simple ${side} renal cysts.` : `Simple ${side} renal cyst.`;
+        }
         case 'stone': {
           if(side==='bilateral') return 'Bilateral nephrolithiasis.';
           let base = `${cap(side)} nephrolithiasis.`;
@@ -6585,6 +7395,18 @@ function buildAbdomenParas(){
     allTypes.forEach(type=>{
       const onR = rKeys.includes(type);
       const onL = lKeys.includes(type);
+      // Cysts of different type combinations (simple vs. complex vs. both) on
+      // each side can't be merged into one "bilateral" line — split them so
+      // the side(s) carrying a complex cyst still get their own recommendation.
+      if(type==='cyst' && onR && onL){
+        const typesOf = (sd)=> ((sd.cystTypes && sd.cystTypes.length) ? sd.cystTypes : ['simple']).slice().sort().join(',');
+        if(typesOf(st.right) !== typesOf(st.left)){
+          impressionLines.push(impressionTextFor('cyst', 'right'));
+          impressionLines.push(impressionTextFor('cyst', 'left'));
+          anyAbnormal = true;
+          return;
+        }
+      }
       if(onR && onL){
         impressionLines.push(impressionTextFor(type, 'bilateral'));
       } else if(onR){
@@ -6596,8 +7418,9 @@ function buildAbdomenParas(){
     });
   }
 
-  // Bladder — present in every study type
-  {
+  // Bladder — only if the selected study type includes it (e.g. NOT Hepatobiliary
+  // Tree or Upper Abdomen studies, which never scan the bladder)
+  if(studyIncludes('Bladder')){
     const st = builderState.Bladder;
     const opt = BLADDER.primary.find(o=>o.id===st.primary);
     const isEmpty = opt.id==='empty';
@@ -6624,7 +7447,9 @@ function buildAbdomenParas(){
       }
     }
     // Internal echoes / debris (only when the bladder was assessable, not empty).
+    // Debris IS echogenic content, so drop the contradictory "no echogenic focus" clause first.
     if(!isEmpty && st.additional && st.additional.debris){
+      text = text.replace(/\s*No echogenic focus is noted within\.\s*/g, ' ');
       text += ' Mobile internal low-level echoes are noted within the bladder lumen.';
     }
     // A Foley catheter balloon is noted (not applicable to an empty bladder).
@@ -6734,8 +7559,8 @@ function buildAbdomenParas(){
   // "Others" — free fluid in named spaces
   const FF = builderState.FreeFluid;
   const abdSpaces = [];
-  if(FF.hrs) abdSpaces.push('the hepatorenal space (Morison\u2019s pouch)');
-  if(FF.srs) abdSpaces.push('the splenorenal space');
+  if(FF.hrs) abdSpaces.push('the perihepatic space (Morison\u2019s pouch)');
+  if(FF.srs) abdSpaces.push('the perisplenic space');
   if(FF.paracolic) abdSpaces.push('the paracolic gutter');
   if(FF.pelvic) abdSpaces.push('the pelvic space');
   const thoraxSides = [];
@@ -6848,6 +7673,13 @@ TR4: Moderately suspicious — FNAB if \u22651.5 cm; follow if \u22651 cm at 1, 
 TR5: Highly suspicious — FNAB if \u22651 cm; follow if \u22650.5 cm, annually up to 5 yrs`;
 
 function buildFullReport(){
+  // X-ray reports skip the patient header — per user request, the X-ray copy/export
+  // output is findings-only (no patient block, no clinical-info line); see the
+  // modality==='xray' branch of buildFullReportBody() for the matching change.
+  const header = builderState.modality==='xray' ? '' : patientHeaderText();
+  return header + buildFullReportBody();
+}
+function buildFullReportBody(){
   const findings = document.getElementById('builderFindings').textContent;
   const impression = document.getElementById('builderImpression').textContent;
   if(builderState.modality==='neck'){
@@ -6898,15 +7730,22 @@ function buildFullReport(){
   if(builderState.modality==='scrotal'){
     return `INGUINO-SCROTAL ULTRASOUND\n\nTECHNIQUE:\nHigh-resolution gray-scale and color Doppler ultrasound of the scrotum and inguinal regions was performed.\n\nFINDINGS:\n${findings}\n\nIMPRESSION:\n${impression}`;
   }
+  if(builderState.modality==='softtissue'){
+    return `SOFT TISSUE ULTRASOUND\n\nTECHNIQUE:\nHigh-resolution gray-scale and color/power Doppler ultrasound of the area of palpable/clinical concern was performed.\n\nFINDINGS:\n${findings}\n\nIMPRESSION:\n${impression}`;
+  }
   if(builderState.modality==='xray'){
+    // Per user request: X-ray output is findings-only — no patient header (see
+    // buildFullReport()) and no "Clinical information" line, on either sub-type.
     const X = builderState.Xray;
+    if(X.subtype==='chest'){
+      return `CHEST RADIOGRAPH\n\nTECHNIQUE:\n${techniqueText()}\n\nFINDINGS:\n${findings}\n\nIMPRESSION:\n${impression}`;
+    }
     const parsed = parseAoCode(X.aoCodeInput);
     const useCode = X.aoCodeInput && X.aoCodeInput.trim()!=='' && parsed.valid;
     const bone = useCode ? parsed.boneLabel : boneName(X);
     const sideWord = X.side==='na' ? '' : X.side.toUpperCase() + ' ';
-    const clinical = X.clinicalInfo && X.clinicalInfo.trim()!=='' ? X.clinicalInfo.trim() : '___';
     const title = `RADIOGRAPH OF THE ${sideWord}${bone.toUpperCase()}`;
-    return `${title}\n\nClinical information: ${clinical}\n\nTECHNIQUE:\n${techniqueText()}\n\nFINDINGS:\n${findings}\n\nIMPRESSION:\n${impression}`;
+    return `${title}\n\nTECHNIQUE:\n${techniqueText()}\n\nFINDINGS:\n${findings}\n\nIMPRESSION:\n${impression}`;
   }
   const title = `${currentStudyType().label} ULTRASOUND`;
   return `${title}\n\nTECHNIQUE:\n${techniqueText()}\n\nFINDINGS:\n${findings}\n\nIMPRESSION:\n${impression}`;
@@ -6983,14 +7822,16 @@ function resetBuilderForNewPatient(){
   if(builderState.modality==='fetal'){
     builderState.Fetal = {
       fetusCount:'Singleton', presentation:'Cephalic', fht:'', afi:'', placentaLocation:'Anterior', placentaGrade:'2', placentaGradeAuto:true,
-      gender:'', nuchalCord:false, crl:'', bpd:'', hc:'', ac:'', fl:'', fetusB:{bpd:'', hc:'', ac:'', fl:'', crl:'', presentation:'Cephalic', gender:''}, efwOverride:'', gaOverride:'', eddOverride:''
+      gender:'', nuchalCord:false, crl:'', bpd:'', hc:'', ac:'', fl:'', fetusB:{bpd:'', hc:'', ac:'', fl:'', crl:'', presentation:'Cephalic', gender:'', fht:'', afi:''}, efwOverride:'', gaOverride:'', eddOverride:''
     };
     buildFetalCards();
     generateReport();
     return;
   }
   if(builderState.modality==='xray'){
-    builderState.Xray = {clinicalInfo:'', aoCodeInput:'', qualMeaning:'', bone:'3', boneOther:'', side:'right', segment:'2', type:'A', group:'1', displacement:'nondisplaced', angulation:'', comminution:false, openFracture:false, intraarticular:false, softTissue:'', views:'AP and lateral'};
+    const keepSubtype = builderState.Xray.subtype;
+    builderState.Xray = {subtype:keepSubtype, clinicalInfo:'', aoCodeInput:'', qualMeaning:'', bone:'3', boneOther:'', side:'right', segment:'2', type:'A', group:'1', displacement:'nondisplaced', angulation:'', comminution:false, openFracture:false, intraarticular:false, softTissue:'', views:'AP and lateral',
+      chest:{clinicalInfo:'', views:'PA', lungPattern:'normal', atherosclerosis:false, spondylosis:false, cardiomegaly:false}};
     buildXrayCards();
     generateReport();
     return;
@@ -7020,13 +7861,36 @@ function resetBuilderForNewPatient(){
     generateReport();
     return;
   }
+  if(builderState.modality==='softtissue'){
+    builderState.SoftTissue = {
+      locationBody:'nonspecific', locationBodyOther:'',
+      locationTissue:'subcutaneous',
+      composition:'entirelySolid',
+      sizeCC:'', sizeTR:'', sizeAP:'',
+      involved:['none'],
+      attenuation:'none',
+      echogenicity:'isoechoic',
+      margins:'smooth',
+      vascularity:'none',
+      dopplerMode:'color',
+      otherFeatures:[], otherFeaturesText:'',
+      impressionType:'benign',
+      benignType:'',
+      notMassType:'',
+      lymphNodeType:'nonspecific',
+      recommend:[],
+      followUpWeeks:''
+    };
+    buildSoftTissueCards();
+    generateReport();
+    return;
+  }
   Object.keys(builderState).forEach(k=>{
-    if(k==='modality' || k==='Neck' || k==='Fast' || k==='Breast' || k==='Fetal' || k==='Xray' || k==='Scoliosis' || k==='Duplex' || k==='Sonomammo' || k==='Scrotal'){ /* leave untouched */ }
+    if(k==='modality' || k==='patient' || k==='studyType' || k==='Neck' || k==='Fast' || k==='Breast' || k==='Fetal' || k==='Xray' || k==='Scoliosis' || k==='Duplex' || k==='Sonomammo' || k==='Scrotal' || k==='SoftTissue'){ /* leave untouched — patient identity is cleared separately by clearPatientInfo(), only from the explicit "New patient" button/Esc, never by "Reset all to normal". studyType (Whole abdomen/KUB/etc.) is "which builder," not clinical data — a new patient in the same batch of studies shouldn't need it reselected. */ }
     else if(k==='expandedOrgans'){ builderState.expandedOrgans = {}; }
-    else if(k==='studyType'){ builderState.studyType='whole_abdomen'; }
-    else if(k==='Kidneys'){ builderState[k]={right:{primary:'normal', hydro:'none', additional:{}, cystLoc:[], stoneLoc:[], cmd:'good', cystMode:'single', stoneMode:'single', stoneShadowing:'shadowing'}, left:{primary:'normal', hydro:'none', additional:{}, cystLoc:[], stoneLoc:[], cmd:'good', cystMode:'single', stoneMode:'single', stoneShadowing:'shadowing'}, measurements:{}}; }
+    else if(k==='Kidneys'){ builderState[k]={right:{primary:'normal', hydro:'none', additional:{}, cystLoc:[], cystTypes:['simple'], cystFeatures:[], complexCystLoc:[], complexCystMode:'single', stoneLoc:[], cmd:'good', cystMode:'single', stoneMode:'single', stoneShadowing:'shadowing'}, left:{primary:'normal', hydro:'none', additional:{}, cystLoc:[], cystTypes:['simple'], cystFeatures:[], complexCystLoc:[], complexCystMode:'single', stoneLoc:[], cmd:'good', cystMode:'single', stoneMode:'single', stoneShadowing:'shadowing'}, measurements:{}}; }
     else if(k==='Bladder'){ builderState[k]={primary:'normal', additional:{}, measurements:{}, includeVolumes:false, foley:false}; }
-    else if(k==='Gallbladder'){ builderState[k]={wall:'none', findings:{stones:false, polyp:false, sludge:false, adenomyomatosis:false}, measurements:{}, stoneMode:'largest', stoneShadowing:'shadowing', polypCount:'single', polypMode:'largest'}; }
+    else if(k==='Gallbladder'){ builderState[k]={wall:'none', findings:{stones:false, polyp:false, sludge:false, adenomyomatosis:false}, measurements:{}, stoneMode:'largest', stoneShadowing:'shadowing', polypCount:'single', polypMode:'largest', sludgeType:'layering'}; }
     else if(k==='Prostate'){ builderState[k]={primary:'normal', calcification:false, ipp:false, ippMm:'', measurements:{}}; }
     else if(k==='Aorta'){ builderState[k]={status:'none', findings:{dilatation:false, calcification:false, paraAortic:false}, measurements:{}}; }
     else if(k==='Spleen'){ builderState[k]={primary:'normal', measurements:{}, overrideSize:false}; }
@@ -7042,8 +7906,103 @@ function resetBuilderForNewPatient(){
 }
 
 document.getElementById('resetBuilder').addEventListener('click', resetBuilderForNewPatient);
-document.getElementById('newPatientBtn').addEventListener('click', resetBuilderForNewPatient);
+document.getElementById('newPatientBtn').addEventListener('click', ()=>{
+  resetBuilderForNewPatient();
+  clearPatientInfo();
+});
 
+/* ---------- KEYBOARD SHORTCUTS: jump to an organ's measurement box (F1-F10) ----------
+   Switches to the Abdomen/KUB tab if needed, expands the organ's card if it's
+   currently auto-collapsed (normal/not-included), then focuses + selects its
+   first measurement input so you can start typing immediately. When an organ
+   has no measurement box available yet in its current state (e.g. Aorta still
+   "Not included", Appendix not ticked in), falls back to focusing its primary
+   status control instead of doing nothing. */
+const ORGAN_JUMP_KEYS = {
+  F1:'Pancreas', F2:'Aorta', F3:'Liver', F4:'Gallbladder',
+  F5:'KidneysRight', F6:'KidneysLeft', F7:'Spleen', F8:'Bladder',
+  F9:'ProstateOrPelvis', F10:'Appendix'
+};
+const ORGAN_JUMP_COLLAPSIBLE = ['Pancreas','Aorta','Gallbladder','Spleen','Bladder','Prostate'];
+function jumpToOrganMeasurement(key){
+  if(builderState.modality !== 'abdomen'){
+    builderState.modality = 'abdomen';
+  }
+  // 'ProstateOrPelvis' isn't a real builderState/organ.key — collapsibility is
+  // tracked under the actual 'Prostate' key (Pelvis never auto-collapses).
+  const expandKey = key==='ProstateOrPelvis' ? 'Prostate' : key;
+  if(ORGAN_JUMP_COLLAPSIBLE.includes(expandKey) && isOrganCollapsible(expandKey) && !builderState.expandedOrgans[expandKey]){
+    builderState.expandedOrgans[expandKey] = true;
+  }
+  syncModalityView();
+  generateReport();
+
+  let target = null;
+  switch(key){
+    case 'Pancreas':
+      target = document.querySelector('input[data-organ="Pancreas"]') || document.querySelector('[data-organ="Pancreas"][data-primary-pill]');
+      break;
+    case 'Aorta':
+      target = document.querySelector('input[data-organ="Aorta"]') || document.querySelector('[data-aorta-status]');
+      break;
+    case 'Liver':
+      target = document.querySelector('input[data-organ="Liver"]');
+      break;
+    case 'Gallbladder':
+      target = document.querySelector('input[data-organ="Gallbladder"]') || document.querySelector('[data-gbwall]');
+      break;
+    case 'KidneysRight':
+      target = document.querySelector('input[data-organ="Kidneys"][data-mkey^="right"]');
+      break;
+    case 'KidneysLeft':
+      target = document.querySelector('input[data-organ="Kidneys"][data-mkey^="left"]');
+      break;
+    case 'Spleen':
+      target = document.querySelector('input[data-organ="Spleen"]');
+      break;
+    case 'Bladder':
+      target = document.querySelector('input[data-organ="Bladder"]') || document.querySelector('[data-organ="Bladder"][data-primary-pill]');
+      break;
+    case 'ProstateOrPelvis':
+      // Whichever of the two is actually part of the current study type.
+      target = document.querySelector('input[data-organ="Prostate"]')
+        || document.querySelector('[data-organ="Prostate"][data-primary-pill]')
+        || document.querySelector('input[data-pelvis-uterus="L"]');
+      break;
+    case 'Appendix':
+      target = document.querySelector('input[data-organ="Appendix"]') || document.getElementById('appendixInclude');
+      break;
+  }
+  if(target){
+    target.focus();
+    if(target.select) target.select();
+    target.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+}
+
+/* ---------- KEYBOARD SHORTCUTS: New patient (Esc) / jump-to-organ (F1-F10) ----------
+   Esc mirrors the "New patient" button — clears the current modality's values —
+   and confirms first since it's destructive and unrecoverable. F1-F10 are
+   non-destructive navigation shortcuts (see jumpToOrganMeasurement above).
+   preventDefault() fires before the lock check so an F-key can never fall through
+   to the browser's own shortcut (F1 help, F5 refresh, etc.) even while locked. */
+document.addEventListener('keydown', e=>{
+  const isJumpKey = Object.prototype.hasOwnProperty.call(ORGAN_JUMP_KEYS, e.key);
+  if(e.key!=='Escape' && !isJumpKey) return;
+  e.preventDefault();
+
+  if(e.key==='Escape'){
+    if(confirm('Start a new patient? This clears the current builder.')){
+      resetBuilderForNewPatient();
+      clearPatientInfo();
+    }
+    return;
+  }
+  jumpToOrganMeasurement(ORGAN_JUMP_KEYS[e.key]);
+});
+
+restoreLastBuilderChoice();
+renderPatientBar();
 buildModalityBar();
 syncModalityView();
 generateReport();
@@ -7514,51 +8473,6 @@ buildChecklist();
   });
 })();
 
-/* ---------- LOCK SCREEN / PASSWORD GATE ---------- */
-(function(){
-  // SHA-256 of the password. Default password: radiology2026
-  // To change it: compute the SHA-256 hex of your new password and replace below.
-  const PASSWORD_HASH = '5fcf9aa06ae3b786dc0f196d22da6308e6e6764c2471779fc4fa93e9bd0e89bd';
-  // (auto-lock disabled; manual logout only)
-
-  const lockScreen = document.getElementById('lockScreen');
-  const lockInput  = document.getElementById('lockInput');
-  const lockBtn    = document.getElementById('lockBtn');
-  const lockError  = document.getElementById('lockError');
-  const logoutBtn  = document.getElementById('logoutBtn');
-  let inactivityTimer = null;
-
-  async function sha256hex(str){
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  }
-
-  function lock(){
-    lockScreen.classList.remove('hidden');
-    lockInput.value = '';
-    lockError.textContent = '';
-    setTimeout(()=>lockInput.focus(), 50);
-  }
-  function unlock(){
-    lockScreen.classList.add('hidden');
-  }
-
-  async function tryUnlock(){
-    const val = lockInput.value;
-    if(!val){ lockError.textContent = 'Please enter the password.'; return; }
-    let ok = false;
-    try { ok = (await sha256hex(val)) === PASSWORD_HASH; } catch(e){ ok = false; }
-    if(ok){ unlock(); }
-    else { lockError.textContent = 'Incorrect password.'; lockInput.value=''; lockInput.focus(); }
-  }
-
-  lockBtn.addEventListener('click', tryUnlock);
-  lockInput.addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
-  logoutBtn.addEventListener('click', lock);
-
-  // Start locked on every page load
-  lock();
-})();
 </script>
 </body>
 </html>
